@@ -1,6 +1,7 @@
 import "../globals.css";
 
 import { HeaderLogin, MenuLogout } from "$src/components/buttons";
+import { Drawer } from "$src/components/drawer";
 import { authOptions } from "$src/lib/auth";
 import { getServerSession } from "next-auth";
 import { Inter } from "next/font/google";
@@ -34,9 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 				<div className="relative flex min-h-screen flex-col">
 					<header className="relative z-20 w-full border-b-[1px] border-slate-500">
 						<nav className="container mx-auto flex max-w-5xl gap-2 p-4">
-							{/* <button className="flex py-3 pr-4 print:hidden md:hidden" onClick={() => setDrawer(true)}>
-							<Icon path={mdiMenu} size={1} />
-						</button> */}
+							<Drawer />
 							<Link href={session?.user ? "/characters" : "/"} className="mr-8 flex flex-col text-center font-draconis">
 								<h1 className="text-base leading-4 text-accent-content">Adventurers League</h1>
 								<h2 className="text-3xl leading-7">Log Sheet</h2>
@@ -77,23 +76,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 										<ul tabIndex={0} className="dropdown-content menu rounded-box w-52 bg-base-100 p-2 shadow">
 											<li className="sm:hidden">
 												<a>{session.user.name}</a>
-											</li>
-											<li className="sm:hidden">
-												<Link href="/dms">DMs</Link>
-											</li>
-											<li>
-												<a href="http://paypal.me/Sillvva" target="_blank" rel="noreferrer noopener" className="items-center sm:hidden">
-													Contribute
-												</a>
-											</li>
-											<li>
-												<a
-													href="https://github.com/sillvva/adventurers-league-log"
-													target="_blank"
-													rel="noreferrer noopener"
-													className="items-center sm:hidden">
-													Github
-												</a>
 											</li>
 											<li>
 												<MenuLogout />

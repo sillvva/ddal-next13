@@ -1,14 +1,57 @@
+import { CharactersTable } from "$src/components/table";
 import { appHead } from "$src/lib/app-head";
 import { authOptions } from "$src/lib/auth";
+import { getCharacters } from "$src/server/db/characters";
+import { prisma } from "$src/server/db/client";
 import { getServerSession } from "next-auth";
 import { headers } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
+
+import { mdiDotsHorizontal, mdiHome, mdiPlus } from "@mdi/js";
+import Icon from "@mdi/react";
 
 export default async function Page() {
 	const session = await getServerSession(authOptions);
-	if (!session) throw redirect("/");
+	if (!session?.user) throw redirect("/");
 
-	return <>Characters</>;
+	const characters = await getCharacters(prisma, session.user.id);
+
+	return (
+		<div className="flex flex-col gap-4">
+			<div className="flex gap-4">
+				<div className="breadcrumbs text-sm">
+					<ul>
+						<li>
+							<Icon path={mdiHome} className="w-4" />
+						</li>
+						<li className="dark:drop-shadow-md">Characters</li>
+					</ul>
+				</div>
+				<div className="flex-1" />
+				{characters && characters.length > 0 && (
+					<Link href="/characters/new" className="btn-primary btn-sm btn">
+						<span className="hidden sm:inline">New Character</span>
+						<Icon path={mdiPlus} className="inline w-4 sm:hidden" />
+					</Link>
+				)}
+				<div className="dropdown-end dropdown">
+					<label tabIndex={1} className="btn-sm btn">
+						<Icon path={mdiDotsHorizontal} size={1} />
+					</label>
+					<ul tabIndex={1} className="dropdown-content menu rounded-box w-52 bg-base-100 p-2 shadow">
+						<li>
+							<a download={`characters.json`} href={`/api/exports/characters/all`} target="_blank" rel="noreferrer noopener">
+								Export
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+
+			<CharactersTable characters={characters} />
+		</div>
+	);
 }
 
 import type { Metadata } from "next";
