@@ -12,12 +12,12 @@ export async function GET(req: Request, { params: { characterId } }: { params: {
 
 	try {
 		if (characterId === "all") {
-			const characters = await getCharacters(prisma, session.user.id);
+			const characters = await getCharacters(session.user.id);
 			return NextResponse.json(characters);
 		} else {
 			if (typeof characterId !== "string") return new Response("Invalid characterId", { status: 400 });
 
-			const character = await getCharacter(prisma, characterId);
+			const character = await getCharacter(characterId);
 
 			if (!character) return new Response("Character not found", { status: 404 });
 			if (character.userId !== session.user.id) return new Response("Unauthorized", { status: 401 });

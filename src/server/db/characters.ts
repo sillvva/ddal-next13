@@ -1,6 +1,7 @@
-import type { PrismaClient, DungeonMaster, Log, MagicItem, StoryAward } from "@prisma/client";
+import type { DungeonMaster, Log, MagicItem, StoryAward } from "@prisma/client";
+import { prisma } from "$src/server/db/client";
 
-export async function getCharacter(prisma: PrismaClient, characterId: string) {
+export async function getCharacter(characterId: string) {
 	const character = await prisma.character.findFirst({
 		include: {
 			user: true,
@@ -28,7 +29,9 @@ export async function getCharacter(prisma: PrismaClient, characterId: string) {
 	};
 }
 
-export async function getCharacters(prisma: PrismaClient, userId: string) {
+export type CharacterData = Exclude<Awaited<ReturnType<typeof getCharacter>>, null>;
+
+export async function getCharacters(userId: string) {
 	const characters = await prisma.character.findMany({
 		include: {
 			user: true,
@@ -89,7 +92,7 @@ export async function getCharacters(prisma: PrismaClient, userId: string) {
 
 export type CharactersData = Awaited<ReturnType<typeof getCharacters>>;
 
-export async function getCharacterLogs(prisma: PrismaClient, characterId: string) {
+export async function getCharacterLogs(characterId: string) {
 	const logs = await prisma.log.findMany({
 		include: {
 			dm: true,

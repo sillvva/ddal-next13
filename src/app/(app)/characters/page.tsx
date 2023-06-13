@@ -3,7 +3,6 @@ import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { getCookie } from "$src/lib/store";
 import { getCharacters } from "$src/server/db/characters";
-import { prisma } from "$src/server/db/client";
 import { getServerSession } from "next-auth";
 import { headers } from "next/headers";
 import Link from "next/link";
@@ -25,7 +24,7 @@ export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
 
-	const characters = await getCharacters(prisma, session.user.id);
+	const characters = await getCharacters(session.user.id);
 	const characterCookie = getCookie(charactersCookieSchema);
 
 	return (

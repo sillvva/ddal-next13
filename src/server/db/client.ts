@@ -4,7 +4,7 @@ import { env } from "$src/env/server.mjs";
 import { PrismaClient } from "@prisma/client";
 
 declare global {
-	var prisma: PrismaClient | undefined;
+	var prisma: PrismaClient;
 }
 
 export const prisma =

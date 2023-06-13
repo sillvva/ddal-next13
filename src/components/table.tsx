@@ -140,9 +140,9 @@ export function CharactersTable({ characters, cookie }: { characters: Characters
 									</td>
 									<td className="transition-colors">
 										<div className="flex flex-col">
-											<div className="whitespace-pre-wrap text-base font-bold text-accent-content sm:text-xl">
+											<Link href={`/characters/${character.id}`} className="whitespace-pre-wrap text-base font-bold text-accent-content sm:text-xl">
 												<SearchResults text={character.name} search={search} />
-											</div>
+											</Link>
 											<div className="whitespace-pre-wrap text-xs sm:text-sm">
 												<span className="inline pr-1 sm:hidden">Level {character.total_level}</span>
 												<SearchResults text={character.race} search={search} /> <SearchResults text={character.class} search={search} />
