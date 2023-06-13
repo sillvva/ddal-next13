@@ -1,4 +1,4 @@
-import "../globals.css";
+import "$src/app/globals.css";
 
 import { HeaderLogin, MenuLogout } from "$src/components/buttons";
 import { Drawer } from "$src/components/drawer";
@@ -10,7 +10,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { twMerge } from "tailwind-merge";
 
-import { mdiGithub, mdiMenu } from "@mdi/js";
+import { mdiGithub } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import background from "../../../public/images/barovia-gate.jpg";
