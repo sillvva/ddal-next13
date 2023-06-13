@@ -1,4 +1,4 @@
-import { HomeLogin } from "$src/components/buttons";
+import { HomeLogin } from "$src/components/auth";
 import { appHead } from "$src/lib/app-head";
 import { authOptions } from "$src/lib/auth";
 import { getServerSession } from "next-auth";

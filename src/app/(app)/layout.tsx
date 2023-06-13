@@ -1,6 +1,6 @@
 import "$src/app/globals.css";
 
-import { HeaderLogin, MenuLogout } from "$src/components/buttons";
+import { HeaderLogin, MenuLogout } from "$src/components/auth";
 import { Drawer } from "$src/components/drawer";
 import { authOptions } from "$src/lib/auth";
 import { getServerSession } from "next-auth";
