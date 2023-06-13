@@ -1,5 +1,5 @@
-import { appHead } from "$src/lib/app-head";
 import { authOptions } from "$src/lib/auth";
+import { appMeta } from "$src/lib/meta";
 import { getServerSession } from "next-auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -18,5 +18,5 @@ export async function generateMetadata(): Promise<Metadata> {
 	const fullUrl = headersList.get("referer") || "";
 	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
 
-	return appHead(path, "Character");
+	return appMeta(path, "Character");
 }

@@ -1,4 +1,4 @@
-export const appHead = (path: string, title: string) => {
+export const appMeta = (path: string, title: string) => {
 	const openGraph = !path.match(/^\/characters\/[^\/]+\/?$/i)
 		? {
 				title: "Adventurers League Log",

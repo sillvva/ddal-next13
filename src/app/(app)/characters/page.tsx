@@ -1,6 +1,6 @@
 import { CharactersTable } from "$src/components/table";
-import { appHead } from "$src/lib/app-head";
 import { authOptions } from "$src/lib/auth";
+import { appMeta } from "$src/lib/meta";
 import { getCookie } from "$src/lib/store";
 import { getCharacters } from "$src/server/db/characters";
 import { prisma } from "$src/server/db/client";
@@ -73,5 +73,5 @@ export async function generateMetadata(): Promise<Metadata> {
 	const fullUrl = headersList.get("referer") || "";
 	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
 
-	return appHead(path, `${session?.user?.name}'s Characters`);
+	return appMeta(path, `${session?.user?.name}'s Characters`);
 }
