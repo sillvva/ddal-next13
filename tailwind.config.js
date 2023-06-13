@@ -1,3 +1,4 @@
+const themes = require('daisyui/src/theming/themes');
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -7,12 +8,25 @@ module.exports = {
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic':
-          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-      },
-    },
+      fontFamily: {
+        draconis: ["Draconis"],
+        vecna: ["Vecna"]
+      }
+    }
   },
-  plugins: [],
+  plugins: [require("daisyui")],
+  daisyui: {
+    themes: [
+      {
+        light: {
+          ...themes["[data-theme=light]"],
+          secondary: "#570DF8",
+        },
+        dark: {
+          ...themes["[data-theme=dark]"],
+          secondary: "#c881ff",
+        }
+      }
+    ]
+  }
 }
