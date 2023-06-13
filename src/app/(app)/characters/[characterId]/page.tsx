@@ -1,13 +1,16 @@
 import { Items } from "$src/components/items";
+import { CharacterLogTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
 import { appMeta, characterMeta } from "$src/lib/meta";
 import { slugify } from "$src/lib/misc";
+import { getCookie } from "$src/lib/store";
 import { getCharacter } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
 import { headers } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-import { mdiDotsHorizontal, mdiHome, mdiPlus } from "@mdi/js";
+import { mdiDotsHorizontal, mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
 
 const characterCookieSchema = {
@@ -20,17 +23,15 @@ const characterCookieSchema = {
 export type CharacterCookie = (typeof characterCookieSchema)["defaults"];
 
 export default async function Page({ params: { characterId } }: { params: { characterId: string } }) {
+	if (characterId === "new") throw redirect("/characters/new/edit");
+
 	const session = await getServerSession(authOptions);
 	const character = await getCharacter(characterId);
 	const myCharacter = character?.userId === session?.user?.id;
 
-	if (!character) {
-		return (
-			<div className="flex h-full items-center justify-center">
-				<h1>Character Not Found</h1>
-			</div>
-		);
-	}
+	if (!character) throw redirect(session?.user ? "/characters" : "/");
+
+	const characterCookie = getCookie(characterCookieSchema);
 
 	return (
 		<>
@@ -141,36 +142,10 @@ export default async function Page({ params: { characterId } }: { params: { char
 							)}
 						</div>
 					</div>
-					<div className="flex gap-4 print:hidden">
-						{myCharacter && (
-							<Link href={`/characters/${characterId}/log/new`} className="btn-primary btn-sm btn px-2 sm:px-3">
-								<span className="hidden sm:inline">New Log</span>
-								<Icon path={mdiPlus} size={1} className="inline sm:hidden" />
-							</Link>
-						)}
-						{/* {logs && (
-							<>
-								<input
-									type="text"
-									placeholder="Search"
-									onChange={e => setSearch(e.target.value)}
-									className="input-bordered input input-sm w-full sm:max-w-xs"
-								/>
-								{myCharacter && (
-									<div className="form-control">
-										<label className="label cursor-pointer py-1">
-											<span className="label-text hidden pr-4 sm:inline">Notes</span>
-											<input type="checkbox" className="toggle-primary toggle" checked={descriptions} onChange={toggleDescriptions} />
-										</label>
-									</div>
-								)}
-							</>
-						)} */}
-					</div>
 				</div>
 			</section>
 
-			<pre>{JSON.stringify(character, null, 2)}</pre>
+			<CharacterLogTable character={character} cookie={{ name: characterCookieSchema.name, value: characterCookie }} myCharacter={myCharacter} />
 		</>
 	);
 }
