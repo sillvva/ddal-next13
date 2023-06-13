@@ -1,8 +1,18 @@
-export const getLocal = (store: string, key: string) => {
-	const storeData = JSON.parse(localStorage.getItem(store) || "{}");
-	return storeData[key];
-};
+import { cookies } from "next/headers";
 
-export const setLocal = (store: string, key: string, value: any) => {
-	localStorage.setItem(store, JSON.stringify({ ...JSON.parse(localStorage.getItem(store) || "{}"), [key]: value }));
+export type CookieSchema<TDefaults> = { name: string; defaults: TDefaults };
+
+export const getCookie = <TDefaults extends Record<string, string | number | boolean>>(schema: CookieSchema<TDefaults>) => {
+	const cookieValue = JSON.parse(cookies().get(schema.name)?.value || "{}");
+	const cookieData = schema.defaults;
+
+	if (typeof cookieValue === "object") {
+		for (let key in cookieData) {
+			if (key in cookieValue) {
+				cookieData[key] = cookieValue[key];
+			}
+		}
+	}
+
+	return cookieData;
 };

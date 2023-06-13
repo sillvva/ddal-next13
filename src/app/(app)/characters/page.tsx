@@ -1,6 +1,7 @@
 import { CharactersTable } from "$src/components/table";
 import { appHead } from "$src/lib/app-head";
 import { authOptions } from "$src/lib/auth";
+import { getCookie } from "$src/lib/store";
 import { getCharacters } from "$src/server/db/characters";
 import { prisma } from "$src/server/db/client";
 import { getServerSession } from "next-auth";
@@ -11,11 +12,21 @@ import { redirect } from "next/navigation";
 import { mdiDotsHorizontal, mdiHome, mdiPlus } from "@mdi/js";
 import Icon from "@mdi/react";
 
+const charactersCookieSchema = {
+	name: "characters",
+	defaults: {
+		magicItems: false
+	}
+};
+
+export type CharactersCookie = (typeof charactersCookieSchema)["defaults"];
+
 export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
 
 	const characters = await getCharacters(prisma, session.user.id);
+	const characterCookie = getCookie(charactersCookieSchema);
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -49,7 +60,7 @@ export default async function Page() {
 				</div>
 			</div>
 
-			<CharactersTable characters={characters} />
+			<CharactersTable characters={characters} cookie={{ name: charactersCookieSchema.name, value: characterCookie }} />
 		</div>
 	);
 }

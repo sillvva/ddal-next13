@@ -1,6 +1,5 @@
 "use client";
 
-import { getLocal, setLocal } from "$src/lib/store";
 import { CharactersData } from "$src/server/db/characters";
 import MiniSearch from "minisearch";
 import Link from "next/link";
@@ -8,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { SearchResults } from "./search";
+
+import type { CharactersCookie } from "../app/(app)/characters/page";
 
 let stopWords = new Set(["and", "or", "to", "in", "a", "the"]);
 const minisearch = new MiniSearch({
@@ -19,9 +20,9 @@ const minisearch = new MiniSearch({
 	}
 });
 
-export const CharactersTable = ({ characters }: { characters: CharactersData }) => {
+export function CharactersTable({ characters, cookie }: { characters: CharactersData; cookie: { name: string; value: CharactersCookie } }) {
 	const [search, setSearch] = useState("");
-	const [magicItems, setMagicItems] = useState(Boolean(getLocal("characters", "magicItems")));
+	const [magicItems, setMagicItems] = useState(cookie.value.magicItems);
 	const router = useRouter();
 
 	const indexed = useMemo(
@@ -76,9 +77,9 @@ export const CharactersTable = ({ characters }: { characters: CharactersData }) 
 	}, [indexed, search, characters]);
 
 	const toggleMagicItems = useCallback(() => {
-		setLocal("characters", "magicItems", !magicItems);
+		document.cookie = `${cookie.name}=${JSON.stringify({ ...cookie.value, magicItems: !magicItems })}; path=/`;
 		setMagicItems(!magicItems);
-	}, [magicItems]);
+	}, [magicItems, cookie]);
 
 	return (
 		<>
@@ -151,7 +152,7 @@ export const CharactersTable = ({ characters }: { characters: CharactersData }) 
 													<SearchResults text={character.campaign} search={search} />
 												</p>
 											</div>
-											{(character.match.includes("magicItems") || magicItems) && (
+											{(character.match.includes("magicItems") || magicItems) && !!character.magic_items.length && (
 												<div className=" mb-2 whitespace-pre-wrap">
 													<p className="font-semibold">Magic Items:</p>
 													<SearchResults text={character.magic_items.map(item => item.name).join(" | ")} search={search} />
@@ -172,4 +173,4 @@ export const CharactersTable = ({ characters }: { characters: CharactersData }) 
 			</div>
 		</>
 	);
-};
+}
