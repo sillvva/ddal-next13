@@ -21,8 +21,11 @@ export function DeleteCharacter({ characterId, deleteCharacter }: { characterId:
 				onClick={() => {
 					if (confirm("Are you sure you want to delete this character? This action cannot be undone.")) {
 						setDeleting(true);
-						startTransition(() => {
-							deleteCharacter(characterId);
+						startTransition(async () => {
+							const result = await deleteCharacter(characterId);
+							if (result.error) {
+								alert(result.error);
+							}
 						});
 					}
 				}}>

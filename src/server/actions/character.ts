@@ -3,13 +3,16 @@ import { prisma } from "../db/client";
 
 export type DeleteCharacterFunction = typeof deleteCharacter;
 export async function deleteCharacter(characterId: string, userId?: string) {
-	const character = await prisma.character.findUnique({
-		where: { id: characterId },
-		include: { logs: { include: { character: true } } }
-	});
-	if (character && character.userId !== userId) {
+	try {
+		if (!userId) throw new Error("Not authenticated");
+		const character = await prisma.character.findUnique({
+			where: { id: characterId },
+			include: { logs: { include: { character: true } } }
+		});
+		if (!character) throw new Error("Character not found");
+		if (character.userId !== userId) throw new Error("Not authorized");
 		const logIds = character.logs.map(log => log.id);
-		return await prisma.$transaction(async tx => {
+		const result = await prisma.$transaction(async tx => {
 			await tx.magicItem.deleteMany({
 				where: {
 					logGainedId: {
@@ -35,5 +38,9 @@ export async function deleteCharacter(characterId: string, userId?: string) {
 				where: { id: characterId }
 			});
 		});
-	} else return false;
+		return { id: result.id, error: null };
+	} catch (error) {
+		if (error instanceof Error) return { id: null, error: error.message };
+		else return { id: null, error: "An unknown error has occurred" };
+	}
 }
