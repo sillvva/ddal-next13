@@ -10,13 +10,13 @@ export const authOptions: NextAuthOptions = {
 	// Include user.id on session
 	callbacks: {
 		session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
-      }
+			if (session.user) {
+				session.user.id = user.id;
+			}
 			return session;
-		},
-
+		}
 	},
+	secret: process.env.NEXTAUTH_SECRET,
 	// Configure one or more authentication providers
 	adapter: PrismaAdapter(prisma),
 	providers: [
