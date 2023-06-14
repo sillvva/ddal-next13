@@ -181,10 +181,6 @@ export function EditCharacterLogForm({
 		resolver: zodResolver(logSchema)
 	});
 
-	if (id !== "new" && !log.name) {
-		return <></>;
-	}
-
 	const [season, setSeason] = useState<1 | 8 | 9>(log?.experience ? 1 : log?.acp ? 8 : 9);
 	const [type, setType] = useState<LogType>(log.type || "game");
 	const [saving, setSaving] = useState(false);
@@ -289,6 +285,10 @@ export function EditCharacterLogForm({
 			setTimeout(() => setSaving(false), 2000);
 		}
 	}, [saving, isPending]);
+
+	if (id !== "new" && !log.name) {
+		return <></>;
+	}
 
 	return (
 		<>
