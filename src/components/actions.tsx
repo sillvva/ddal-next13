@@ -11,7 +11,7 @@ export function DeleteCharacter({ characterId, deleteCharacter }: { characterId:
 
 	useEffect(() => {
 		if (!isPending && deleting) {
-			setTimeout(() => setDeleting(false), 1000);
+			setTimeout(() => setDeleting(false), 5000);
 		}
 	}, [deleting, isPending]);
 
@@ -26,6 +26,7 @@ export function DeleteCharacter({ characterId, deleteCharacter }: { characterId:
 							const result = await deleteCharacter(characterId);
 							if (result.error) {
 								alert(result.error);
+								setDeleting(false);
 							}
 						});
 					}

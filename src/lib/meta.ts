@@ -46,7 +46,7 @@ export const characterMeta = (character: CharacterData, path: string) => {
 	const openGraph = !path.match(/^\/characters\/[^\/]+\/?$/i)
 		? {
 				title: title,
-				description: "A log sheet made for Adventurers League characters",
+				description: `A level ${character.total_level} ${character.race} ${character.class}`,
 				url: `https://ddal.dekok.app/characters/${character.id}`,
 				siteName: "Adventurers League Log",
 				images: [
@@ -64,7 +64,7 @@ export const characterMeta = (character: CharacterData, path: string) => {
 		? {
 				card: "summary_large_image",
 				title: title,
-				description: "A log sheet made for Adventurers League characters",
+				description: `A level ${character.total_level} ${character.race} ${character.class}`,
 				creator: "@sillvvasensei",
 				creatorId: "1006748654391169029",
 				images: [character.image_url || "https://ddal.dekok.app/images/barovia-gate.jpg"],
@@ -75,6 +75,9 @@ export const characterMeta = (character: CharacterData, path: string) => {
 	return {
 		title,
 		openGraph,
-		twitter
+		twitter,
+		icons: {
+			icon: "/favicon.png"
+		}
 	};
 };

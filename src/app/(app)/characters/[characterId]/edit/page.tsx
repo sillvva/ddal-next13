@@ -77,6 +77,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 					)}
 				</ul>
 			</div>
+
 			<EditCharacterForm id={characterId} character={charData} editCharacter={actionEditCharacter} />
 		</>
 	);

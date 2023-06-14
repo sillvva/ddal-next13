@@ -24,6 +24,7 @@ export const HomeLogin = ({ domain }: { domain: string }) => {
 
 export const HeaderLogin = ({ domain }: { domain: string }) => {
 	const protocol = domain.includes("localhost") ? "http://" : "https://";
+
 	return (
 		<button
 			className="flex h-12 items-center gap-2 rounded-lg bg-base-200/50 p-2 text-base-content transition-colors hover:bg-base-300"
