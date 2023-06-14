@@ -5,11 +5,11 @@ export const appMeta = (path: string, title: string) => {
 		? {
 				title: title,
 				description: "A log sheet made for Adventurers League characters",
-				url: `https://ddal.dekok.app${path}`,
+				url: path,
 				siteName: "Adventurers League Log",
 				images: [
 					{
-						url: "https://ddal.dekok.app/images/barovia-gate.jpg",
+						url: "/images/barovia-gate.jpg",
 						width: 800,
 						height: 600
 					}
@@ -25,15 +25,19 @@ export const appMeta = (path: string, title: string) => {
 				description: "A log sheet made for Adventurers League characters",
 				creator: "@sillvvasensei",
 				creatorId: "1006748654391169029",
-				images: ["https://ddal.dekok.app/images/barovia-gate.jpg"],
-				url: `https://ddal.dekok.app${path}`
+				images: ["/images/barovia-gate.jpg"],
+				url: path
 		  }
 		: {};
 
 	return {
+		metadataBase: new URL("https://ddal.dekok.app"),
 		title,
 		openGraph,
-		twitter
+		twitter,
+		icons: {
+			icon: "/favicon.png"
+		}
 	};
 };
 

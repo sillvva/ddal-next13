@@ -1,4 +1,10 @@
 "use server";
+import { newCharacterSchema } from "$src/types/zod-schema";
+import { z } from "zod";
+
+import { Character } from "@prisma/client";
+
+import { getCharacter } from "../db/characters";
 import { prisma } from "../db/client";
 
 export type DeleteCharacterFunction = typeof deleteCharacter;
@@ -42,5 +48,36 @@ export async function deleteCharacter(characterId: string, userId?: string) {
 	} catch (error) {
 		if (error instanceof Error) return { id: null, error: error.message };
 		else return { id: null, error: "An unknown error has occurred" };
+	}
+}
+
+export type SaveCharacterFunction = typeof saveCharacter;
+export async function saveCharacter(characterId: string, userId: string, data: z.infer<typeof newCharacterSchema>) {
+	try {
+		if (!characterId) throw new Error("No character ID provided.");
+		if (!userId) throw new Error("Not authenticated");
+		let result: Character;
+		if (characterId == "new") {
+			result = await prisma.character.create({
+				data: {
+					...data,
+					userId: userId
+				}
+			});
+		} else {
+			const character = await getCharacter(characterId);
+			if (!character) throw new Error("Character not found.");
+			if (character.userId !== userId) throw new Error("Not authorized.");
+			result = await prisma.character.update({
+				where: { id: characterId },
+				data: {
+					...data
+				}
+			});
+		}
+		return { id: result.id, error: null };
+	} catch (error) {
+		if (error instanceof Error) return { id: null, error: error.message };
+		else return { id: null, error: "An unknown error has occurred." };
 	}
 }
