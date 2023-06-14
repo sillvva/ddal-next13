@@ -24,7 +24,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
 	return (
 		<html lang="en">
-			<body className={twMerge("min-h-screen bg-gray-300 text-base-content dark:bg-gray-800", inter.className)}>
+			<body className={twMerge("min-h-screen text-base-content", inter.className)}>
 				<Image
 					src={background}
 					alt="Background"

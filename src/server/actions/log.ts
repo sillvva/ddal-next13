@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import { Character, DungeonMaster, Log } from "@prisma/client";
 
-import { CharacterData, getLevels } from "../db/characters";
+import { getLevels } from "../db/characters";
 import { prisma } from "../db/client";
 
 export type DeleteLogFunction = typeof deleteLog;

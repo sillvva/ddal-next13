@@ -14,7 +14,6 @@ import { z } from "zod";
 
 import { mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
-import { LogType } from "@prisma/client";
 
 import type { Metadata } from "next";
 
@@ -38,7 +37,7 @@ export default async function Page({ params: { characterId, logId } }: { params:
 			name: "",
 			description: "",
 			date: new Date(),
-			type: "game" as LogType,
+			type: "game",
 			created_at: new Date(),
 			experience: 0,
 			acp: 0,
@@ -66,8 +65,8 @@ export default async function Page({ params: { characterId, logId } }: { params:
 		const result = await saveCharacterLog(characterId, logId, data, session?.user);
 		if (result?.id) {
 			revalidatePath("/characters");
-			revalidatePath(`/characters/${result.id}`);
-			redirect(`/characters/${result.id}`);
+			revalidatePath(`/characters/${characterId}`);
+			redirect(`/characters/${characterId}`);
 		}
 		return { id: null, error: "test" };
 	};
