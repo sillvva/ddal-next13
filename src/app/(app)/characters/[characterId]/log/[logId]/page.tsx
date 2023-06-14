@@ -16,7 +16,6 @@ import { mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
 import { LogType } from "@prisma/client";
 
-import type { CharacterData } from "$src/server/db/characters";
 import type { Metadata } from "next";
 
 export default async function Page({ params: { characterId, logId } }: { params: { characterId: string; logId: string } }) {
@@ -102,11 +101,11 @@ export default async function Page({ params: { characterId, logId } }: { params:
 	);
 }
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params: { logId } }: { params: { logId: string } }): Promise<Metadata> {
 	const headersList = headers();
 	const domain = headersList.get("host") || "";
 	const fullUrl = headersList.get("referer") || "";
 	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
 
-	return appMeta(path, `Edit Log - Adventurers League Log Sheet`);
+	return appMeta(path, `${logId === "new" ? "New" : "Edit"} Log - Adventurers League Log Sheet`);
 }
