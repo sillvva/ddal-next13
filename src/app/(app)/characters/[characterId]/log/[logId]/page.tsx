@@ -65,6 +65,7 @@ export default async function Page({ params: { characterId, logId } }: { params:
 		"use server";
 		const result = await saveCharacterLog(characterId, logId, data, session?.user);
 		if (result?.id) {
+			revalidatePath("/characters");
 			revalidatePath(`/characters/${result.id}`);
 			redirect(`/characters/${result.id}`);
 		}
