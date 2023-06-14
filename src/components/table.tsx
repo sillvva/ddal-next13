@@ -1,21 +1,25 @@
 "use client";
 
-import type { CharacterData, CharactersData } from "$src/server/db/characters";
+import { deleteLog } from "$src/server/actions/log";
 import MiniSearch from "minisearch";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CSSProperties, Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import {
+    CSSProperties, Fragment, useCallback, useEffect, useMemo, useState, useTransition
+} from "react";
 import { twMerge } from "tailwind-merge";
 
-import { mdiPencil, mdiPlus } from "@mdi/js";
+import { mdiPencil, mdiPlus, mdiTrashCan } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import { Items } from "./items";
 import { Markdown } from "./markdown";
 import { SearchResults } from "./search";
 
-import type { CharactersCookie } from "../app/(app)/characters/page";
+import type { CharacterData, CharactersData } from "$src/server/db/characters";
+import type { CharactersCookie } from "$src/app/(app)/characters/page";
 import type { CharacterCookie } from "$src/app/(app)/characters/[characterId]/page";
+
 let stopWords = new Set(["and", "or", "to", "in", "a", "the"]);
 const charactersSearch = new MiniSearch({
 	fields: ["characterName", "campaign", "race", "class", "magicItems", "tier", "level"],
@@ -193,12 +197,13 @@ const logSearch = new MiniSearch({
 export function CharacterLogTable({
 	character,
 	cookie,
-	myCharacter
+	userId
 }: {
 	character: CharacterData;
 	cookie: { name: string; value: CharacterCookie };
-	myCharacter: boolean;
+	userId?: string;
 }) {
+	const myCharacter = character.userId === userId;
 	const [search, setSearch] = useState("");
 	const [descriptions, setDescriptions] = useState(cookie.value.descriptions);
 	const [modal, setModal] = useState<{
@@ -302,195 +307,23 @@ export function CharacterLogTable({
 							<tbody>
 								{results.map(log => (
 									<Fragment key={log.id}>
-										<tr className={twMerge("border-b-0 border-t-2 border-t-base-200 print:text-sm", log.saving && "opacity-50")}>
-											<td
-												className={twMerge(
-													"!static align-top print:p-2",
-													log.saving && "bg-neutral-focus",
-													(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && "border-b-0"
-												)}>
-												<p
-													className="whitespace-pre-wrap font-semibold text-accent-content"
-													onClick={() =>
-														log.description &&
-														!descriptions &&
-														setModal({
-															name: log.name,
-															description: log.description,
-															date: log.date
-														})
-													}>
-													<SearchResults text={log.name} search={search} />
-												</p>
-												<p className="text-netural-content mb-2 text-xs font-normal" suppressHydrationWarning>
-													{new Date(log.is_dm_log && log.applied_date ? log.applied_date : log.date).toLocaleString()}
-												</p>
-												{log.dm && log.type === "game" && log.dm.uid !== character.user.id && (
-													<p className="text-sm font-normal">
-														<span className="font-semibold">DM:</span> {log.dm.name}
-													</p>
-												)}
-												<div className="table-cell font-normal print:hidden sm:hidden">
-													{log.type === "game" && (
-														<>
-															{log.experience > 0 && (
-																<p>
-																	<span className="font-semibold">Experience:</span> {log.experience}
-																</p>
-															)}
-															{log.acp > 0 && (
-																<p>
-																	<span className="font-semibold">ACP:</span> {log.acp}
-																</p>
-															)}
-															<p>
-																<span className="font-semibold">Levels:</span> {log.level_gained} {`(${log.total_level})`}
-															</p>
-														</>
-													)}
-													{log.dtd !== 0 && (
-														<p>
-															<span className="font-semibold">Downtime Days:</span> {log.dtd}
-														</p>
-													)}
-													{log.tcp !== 0 && (
-														<p>
-															<span className="font-semibold">TCP:</span> {log.tcp}
-														</p>
-													)}
-													{log.gold !== 0 && (
-														<p>
-															<span className="font-semibold">Gold:</span> {log.gold.toLocaleString("en-US")}
-														</p>
-													)}
-													<div>
-														<Items title="Magic Items" items={log.magic_items_gained} search={search} />
-														<p className="whitespace-pre-wrap text-sm line-through">
-															<SearchResults text={log.magic_items_lost.map(mi => mi.name).join(" | ")} search={search} />
-														</p>
-													</div>
-												</div>
-											</td>
-											<td
-												className={twMerge(
-													"hidden align-top print:table-cell print:p-2 sm:table-cell",
-													log.saving && "bg-neutral-focus",
-													(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && "border-b-0"
-												)}>
-												{log.experience > 0 && (
-													<p>
-														<span className="font-semibold">Experience:</span> {log.experience}
-													</p>
-												)}
-												{log.acp > 0 && (
-													<p>
-														<span className="font-semibold">ACP:</span> {log.acp}
-													</p>
-												)}
-												{log.level_gained > 0 && (
-													<p>
-														<span className="font-semibold">Levels:</span> {log.level_gained} {`(${log.total_level})`}
-													</p>
-												)}
-												{log.dtd !== 0 && (
-													<p>
-														<span className="text-sm font-semibold">Downtime Days:</span> {log.dtd}
-													</p>
-												)}
-											</td>
-											<td
-												className={twMerge(
-													"hidden align-top print:table-cell print:p-2 sm:table-cell",
-													log.saving && "bg-neutral-focus",
-													(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && "border-b-0"
-												)}>
-												{log.tcp !== 0 && (
-													<p>
-														<span className="font-semibold">TCP:</span> {log.tcp}
-													</p>
-												)}
-												{log.gold !== 0 && (
-													<p>
-														<span className="font-semibold">Gold:</span> {log.gold.toLocaleString("en-US")}
-													</p>
-												)}
-												{(log.magic_items_gained.length > 0 || log.magic_items_lost.length > 0) && (
-													<div>
-														<Items title="Magic Items" items={log.magic_items_gained} search={search} />
-														<div className="whitespace-pre-wrap text-sm line-through">
-															<SearchResults text={log.magic_items_lost.map(mi => mi.name).join(" | ")} search={search} />
-														</div>
-													</div>
-												)}
-											</td>
-											<td
-												className={twMerge(
-													"hidden align-top print:!hidden md:table-cell",
-													log.saving && "bg-neutral-focus",
-													(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && "border-b-0"
-												)}>
-												{(log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && (
-													<div>
-														<Items items={log.story_awards_gained} search={search} />
-														<div className="whitespace-pre-wrap text-sm line-through">
-															<SearchResults text={log.story_awards_lost.map(mi => mi.name).join(" | ")} search={search} />
-														</div>
-													</div>
-												)}
-											</td>
-											{myCharacter && (
-												<td
-													className={twMerge(
-														"w-8 align-top print:hidden",
-														log.saving && "bg-neutral-focus",
-														(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && "border-b-0"
-													)}>
-													<div className="flex flex-col justify-center gap-2">
-														<Link
-															href={`/characters/${character.id}/log/${log.id}`}
-															className={twMerge("btn-primary btn-sm btn", log.saving && "btn-disabled")}>
-															<Icon path={mdiPencil} size={0.8} />
-														</Link>
-														{/* <button
-															className="btn-sm btn"
-															disabled={log.saving}
-															onClick={async () => {
-																if (!confirm(`Are you sure you want to delete ${log.name}? This action cannot be reversed.`)) return false;
-																deleteLogMutation.mutate({ logId: log.id });
-															}}>
-															<Icon path={mdiTrashCan} size={0.8} />
-														</button> */}
-													</div>
-												</td>
-											)}
-										</tr>
-										{(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && (
-											<tr className={twMerge(!descriptions && "hidden print:table-row")}>
-												<td
-													colSpan={100}
-													className={twMerge(
-														"max-w-[calc(100vw_-_50px)] whitespace-pre-wrap pt-0 text-sm print:p-2 print:text-xs",
-														log.saving && "bg-neutral-focus"
-													)}>
-													<h4 className="text-base font-semibold">Notes:</h4>
-													<Markdown>{log.description || ""}</Markdown>
-													{(log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && (
-														<div>
-															{log.story_awards_gained.map(mi => (
-																<div key={mi.id} className="whitespace-pre-wrap text-sm">
-																	<span className="pr-2 font-semibold print:block">
-																		{mi.name}
-																		{mi.description ? ":" : ""}
-																	</span>
-																	<Markdown>{mi.description || ""}</Markdown>
-																</div>
-															))}
-															<p className="whitespace-pre-wrap text-sm line-through">{log.story_awards_lost.map(mi => mi.name).join(" | ")}</p>
-														</div>
-													)}
-												</td>
-											</tr>
-										)}
+										<LogRow
+											log={log}
+											search={search}
+											characterUserId={character.userId}
+											descriptions={descriptions}
+											userId={userId}
+											key={log.id}
+											triggerModal={() =>
+												log.description &&
+												!descriptions &&
+												setModal({
+													name: log.name,
+													description: log.description,
+													date: log.date
+												})
+											}
+										/>
 									</Fragment>
 								))}
 							</tbody>
@@ -519,3 +352,217 @@ export function CharacterLogTable({
 		</>
 	);
 }
+
+const LogRow = ({
+	log,
+	characterUserId,
+	descriptions,
+	userId,
+	search,
+	triggerModal
+}: {
+	log: CharacterData["logs"][0] & { level_gained: number; total_level: number };
+	characterUserId: string;
+	descriptions: boolean;
+	userId?: string;
+	search: string;
+	triggerModal: () => void;
+}) => {
+	const [isPending, startTransition] = useTransition();
+	const [deleting, setDeleting] = useState(false);
+	const myCharacter = characterUserId === userId;
+
+	useEffect(() => {
+		if (!isPending && deleting) {
+			setTimeout(() => setDeleting(false), 1000);
+		}
+	}, [deleting, isPending]);
+
+	return (
+		<>
+			<tr className={twMerge("border-b-0 border-t-2 border-t-base-200 print:text-sm", deleting && "hidden", (log.saving || isPending) && "opacity-40")}>
+				<td
+					className={twMerge(
+						"!static align-top print:p-2",
+						log.saving && "bg-neutral-focus",
+						(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && "border-b-0"
+					)}>
+					<p className="whitespace-pre-wrap font-semibold text-accent-content" onClick={triggerModal}>
+						<SearchResults text={log.name} search={search} />
+					</p>
+					<p className="text-netural-content mb-2 text-xs font-normal" suppressHydrationWarning>
+						{new Date(log.is_dm_log && log.applied_date ? log.applied_date : log.date).toLocaleString()}
+					</p>
+					{log.dm && log.type === "game" && log.dm.uid !== characterUserId && (
+						<p className="text-sm font-normal">
+							<span className="font-semibold">DM:</span> {log.dm.name}
+						</p>
+					)}
+					<div className="table-cell font-normal print:hidden sm:hidden">
+						{log.type === "game" && (
+							<>
+								{log.experience > 0 && (
+									<p>
+										<span className="font-semibold">Experience:</span> {log.experience}
+									</p>
+								)}
+								{log.acp > 0 && (
+									<p>
+										<span className="font-semibold">ACP:</span> {log.acp}
+									</p>
+								)}
+								<p>
+									<span className="font-semibold">Levels:</span> {log.level_gained} {`(${log.total_level})`}
+								</p>
+							</>
+						)}
+						{log.dtd !== 0 && (
+							<p>
+								<span className="font-semibold">Downtime Days:</span> {log.dtd}
+							</p>
+						)}
+						{log.tcp !== 0 && (
+							<p>
+								<span className="font-semibold">TCP:</span> {log.tcp}
+							</p>
+						)}
+						{log.gold !== 0 && (
+							<p>
+								<span className="font-semibold">Gold:</span> {log.gold.toLocaleString("en-US")}
+							</p>
+						)}
+						<div>
+							<Items title="Magic Items" items={log.magic_items_gained} search={search} />
+							<p className="whitespace-pre-wrap text-sm line-through">
+								<SearchResults text={log.magic_items_lost.map(mi => mi.name).join(" | ")} search={search} />
+							</p>
+						</div>
+					</div>
+				</td>
+				<td
+					className={twMerge(
+						"hidden align-top print:table-cell print:p-2 sm:table-cell",
+						log.saving && "bg-neutral-focus",
+						(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && "border-b-0"
+					)}>
+					{log.experience > 0 && (
+						<p>
+							<span className="font-semibold">Experience:</span> {log.experience}
+						</p>
+					)}
+					{log.acp > 0 && (
+						<p>
+							<span className="font-semibold">ACP:</span> {log.acp}
+						</p>
+					)}
+					{log.level_gained > 0 && (
+						<p>
+							<span className="font-semibold">Levels:</span> {log.level_gained} {`(${log.total_level})`}
+						</p>
+					)}
+					{log.dtd !== 0 && (
+						<p>
+							<span className="text-sm font-semibold">Downtime Days:</span> {log.dtd}
+						</p>
+					)}
+				</td>
+				<td
+					className={twMerge(
+						"hidden align-top print:table-cell print:p-2 sm:table-cell",
+						log.saving && "bg-neutral-focus",
+						(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && "border-b-0"
+					)}>
+					{log.tcp !== 0 && (
+						<p>
+							<span className="font-semibold">TCP:</span> {log.tcp}
+						</p>
+					)}
+					{log.gold !== 0 && (
+						<p>
+							<span className="font-semibold">Gold:</span> {log.gold.toLocaleString("en-US")}
+						</p>
+					)}
+					{(log.magic_items_gained.length > 0 || log.magic_items_lost.length > 0) && (
+						<div>
+							<Items title="Magic Items" items={log.magic_items_gained} search={search} />
+							<div className="whitespace-pre-wrap text-sm line-through">
+								<SearchResults text={log.magic_items_lost.map(mi => mi.name).join(" | ")} search={search} />
+							</div>
+						</div>
+					)}
+				</td>
+				<td
+					className={twMerge(
+						"hidden align-top print:!hidden md:table-cell",
+						log.saving && "bg-neutral-focus",
+						(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && "border-b-0"
+					)}>
+					{(log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && (
+						<div>
+							<Items items={log.story_awards_gained} search={search} />
+							<div className="whitespace-pre-wrap text-sm line-through">
+								<SearchResults text={log.story_awards_lost.map(mi => mi.name).join(" | ")} search={search} />
+							</div>
+						</div>
+					)}
+				</td>
+				{myCharacter && (
+					<td
+						className={twMerge(
+							"w-8 align-top print:hidden",
+							log.saving && "bg-neutral-focus",
+							(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && "border-b-0"
+						)}>
+						<div className="flex flex-col justify-center gap-2">
+							<Link href={`/characters/${log.characterId}/log/${log.id}`} className={twMerge("btn-primary btn-sm btn", log.saving && "btn-disabled")}>
+								<Icon path={mdiPencil} size={0.8} />
+							</Link>
+							<button
+								className="btn-sm btn"
+								disabled={isPending}
+								type="button"
+								onClick={e => {
+									if (confirm(`Are you sure you want to delete ${log.name}? This action cannot be reversed.`)) {
+										setDeleting(true);
+										startTransition(async () => {
+											try {
+												await deleteLog(log.id, userId || "");
+											} catch (error) {
+												alert("Something went wrong while deleting the log. Please try again.");
+											}
+										});
+									}
+								}}>
+								<Icon path={mdiTrashCan} size={0.8} />
+							</button>
+						</div>
+					</td>
+				)}
+			</tr>
+			{(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && (
+				<tr className={twMerge(!descriptions && "hidden print:table-row")}>
+					<td
+						colSpan={100}
+						className={twMerge("max-w-[calc(100vw_-_50px)] whitespace-pre-wrap pt-0 text-sm print:p-2 print:text-xs", log.saving && "bg-neutral-focus")}>
+						<h4 className="text-base font-semibold">Notes:</h4>
+						<Markdown>{log.description || ""}</Markdown>
+						{(log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && (
+							<div>
+								{log.story_awards_gained.map(mi => (
+									<div key={mi.id} className="whitespace-pre-wrap text-sm">
+										<span className="pr-2 font-semibold print:block">
+											{mi.name}
+											{mi.description ? ":" : ""}
+										</span>
+										<Markdown>{mi.description || ""}</Markdown>
+									</div>
+								))}
+								<p className="whitespace-pre-wrap text-sm line-through">{log.story_awards_lost.map(mi => mi.name).join(" | ")}</p>
+							</div>
+						)}
+					</td>
+				</tr>
+			)}
+		</>
+	);
+};

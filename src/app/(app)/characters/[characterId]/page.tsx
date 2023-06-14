@@ -145,7 +145,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 				</div>
 			</section>
 
-			<CharacterLogTable character={character} cookie={{ name: characterCookieSchema.name, value: characterCookie }} myCharacter={myCharacter} />
+			<CharacterLogTable character={character} cookie={{ name: characterCookieSchema.name, value: characterCookie }} userId={session?.user?.id} />
 		</>
 	);
 }
