@@ -6,12 +6,14 @@ import Image from "next/image";
 import google from "../../public/images/google.svg";
 
 export const HomeLogin = ({ domain }: { domain: string }) => {
+	const protocol = domain.includes("localhost") ? "http" : "https";
+
 	return (
 		<button
 			className="items-centers flex h-16 gap-4 rounded-lg bg-base-200/50 px-8 py-4 text-base-content transition-colors hover:bg-base-300"
 			onClick={() =>
 				signIn("google", {
-					callbackUrl: `${domain}/characters`
+					callbackUrl: `${protocol}${domain}/characters`
 				})
 			}>
 			<Image src={google} width={32} height={32} alt="Google" />
@@ -21,12 +23,13 @@ export const HomeLogin = ({ domain }: { domain: string }) => {
 };
 
 export const HeaderLogin = ({ domain }: { domain: string }) => {
+	const protocol = domain.includes("localhost") ? "http" : "https";
 	return (
 		<button
 			className="flex h-12 items-center gap-2 rounded-lg bg-base-200/50 p-2 text-base-content transition-colors hover:bg-base-300"
 			onClick={() =>
 				signIn("google", {
-					callbackUrl: `${domain}/characters`
+					callbackUrl: `${protocol}${domain}/characters`
 				})
 			}>
 			<Image src={google} width={24} height={24} alt="Google" />
