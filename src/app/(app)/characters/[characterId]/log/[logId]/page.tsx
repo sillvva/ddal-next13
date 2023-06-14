@@ -97,7 +97,7 @@ export default async function Page({ params: { characterId, logId } }: { params:
 				</ul>
 			</div>
 
-			<EditCharacterLogForm id={log.id} log={log} dms={dms} character={character} saveLog={actionSaveLog} />
+			<EditCharacterLogForm id={logId} log={log} dms={dms} character={character} saveLog={actionSaveLog} />
 		</>
 	);
 }
