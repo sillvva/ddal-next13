@@ -4,9 +4,7 @@ import type { DeleteLogFunction } from "$src/server/actions/log";
 import MiniSearch from "minisearch";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-    CSSProperties, Fragment, useCallback, useEffect, useMemo, useState, useTransition
-} from "react";
+import { CSSProperties, useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { twMerge } from "tailwind-merge";
 
 import { mdiPencil, mdiPlus, mdiTrashCan } from "@mdi/js";
@@ -308,26 +306,24 @@ export function CharacterLogTable({
 							</thead>
 							<tbody>
 								{results.map(log => (
-									<Fragment key={log.id}>
-										<LogRow
-											log={log}
-											search={search}
-											characterUserId={character.userId}
-											userId={userId}
-											descriptions={descriptions}
-											deleteLog={deleteLog}
-											key={log.id}
-											triggerModal={() =>
-												log.description &&
-												!descriptions &&
-												setModal({
-													name: log.name,
-													description: log.description,
-													date: log.date
-												})
-											}
-										/>
-									</Fragment>
+									<CharacterLogRow
+										log={log}
+										search={search}
+										characterUserId={character.userId}
+										userId={userId}
+										descriptions={descriptions}
+										deleteLog={deleteLog}
+										key={log.id}
+										triggerModal={() =>
+											log.description &&
+											!descriptions &&
+											setModal({
+												name: log.name,
+												description: log.description,
+												date: log.date
+											})
+										}
+									/>
 								))}
 							</tbody>
 						</table>
@@ -356,7 +352,7 @@ export function CharacterLogTable({
 	);
 }
 
-const LogRow = ({
+const CharacterLogRow = ({
 	log,
 	characterUserId,
 	userId,
