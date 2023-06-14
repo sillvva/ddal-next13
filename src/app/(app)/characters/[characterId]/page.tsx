@@ -1,11 +1,15 @@
+import { DeleteCharacter } from "$src/components/actions";
 import { Items } from "$src/components/items";
 import { CharacterLogTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
 import { appMeta, characterMeta } from "$src/lib/meta";
 import { slugify } from "$src/lib/misc";
 import { getCookie } from "$src/lib/store";
+import { deleteCharacter } from "$src/server/actions/character";
+import { deleteLog } from "$src/server/actions/log";
 import { getCharacter } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -32,6 +36,26 @@ export default async function Page({ params: { characterId } }: { params: { char
 	if (!character) throw redirect(session?.user ? "/characters" : "/");
 
 	const characterCookie = getCookie(characterCookieSchema);
+
+	const actionDeleteLog = async (logId: string) => {
+		"use server";
+		const result = await deleteLog(logId, session?.user?.id);
+		if (result.id) {
+			revalidatePath(`/character/${result.id}`);
+			revalidatePath("/characters");
+		}
+		return result;
+	};
+
+	const actionDeleteCharacter = async () => {
+		"use server";
+		const result = await deleteCharacter(characterId, session?.user?.id);
+		if (result && result.id) {
+			revalidatePath("/characters");
+			redirect("/characters");
+		}
+		return result;
+	};
 
 	return (
 		<>
@@ -68,17 +92,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 									</a>
 								</li>
 								<li>
-									{/* <a
-										className="bg-red-600 text-white hover:bg-red-900"
-										onClick={() => {
-											if (confirm("Are you sure you want to delete this character? This action cannot be undone.")) {
-												deleteCharacterMutation.mutate({
-													id: characterId
-												});
-											}
-										}}>
-										Delete
-									</a> */}
+									<DeleteCharacter characterId={characterId} deleteCharacter={actionDeleteCharacter} />
 								</li>
 							</ul>
 						</div>
@@ -145,7 +159,12 @@ export default async function Page({ params: { characterId } }: { params: { char
 				</div>
 			</section>
 
-			<CharacterLogTable character={character} cookie={{ name: characterCookieSchema.name, value: characterCookie }} userId={session?.user?.id} />
+			<CharacterLogTable
+				character={character}
+				userId={session?.user?.id || ""}
+				cookie={{ name: characterCookieSchema.name, value: characterCookie }}
+				deleteLog={actionDeleteLog}
+			/>
 		</>
 	);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteLog } from "$src/server/actions/log";
+import type { DeleteLogFunction } from "$src/server/actions/log";
 import MiniSearch from "minisearch";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -196,12 +196,14 @@ const logSearch = new MiniSearch({
 
 export function CharacterLogTable({
 	character,
+	userId,
 	cookie,
-	userId
+	deleteLog
 }: {
 	character: CharacterData;
+	userId: string;
 	cookie: { name: string; value: CharacterCookie };
-	userId?: string;
+	deleteLog: DeleteLogFunction;
 }) {
 	const myCharacter = character.userId === userId;
 	const [search, setSearch] = useState("");
@@ -311,8 +313,9 @@ export function CharacterLogTable({
 											log={log}
 											search={search}
 											characterUserId={character.userId}
-											descriptions={descriptions}
 											userId={userId}
+											descriptions={descriptions}
+											deleteLog={deleteLog}
 											key={log.id}
 											triggerModal={() =>
 												log.description &&
@@ -356,15 +359,17 @@ export function CharacterLogTable({
 const LogRow = ({
 	log,
 	characterUserId,
-	descriptions,
 	userId,
+	descriptions,
+	deleteLog,
 	search,
 	triggerModal
 }: {
 	log: CharacterData["logs"][0] & { level_gained: number; total_level: number };
 	characterUserId: string;
+	userId: string;
 	descriptions: boolean;
-	userId?: string;
+	deleteLog: DeleteLogFunction;
 	search: string;
 	triggerModal: () => void;
 }) => {
@@ -526,9 +531,11 @@ const LogRow = ({
 										setDeleting(true);
 										startTransition(async () => {
 											try {
-												await deleteLog(log.id, userId || "");
+												const result = await deleteLog(log.id);
+												if (result.error) throw new Error(result.error);
 											} catch (error) {
-												alert("Something went wrong while deleting the log. Please try again.");
+												if (error instanceof Error) alert(error.message);
+												else alert("Something went wrong while deleting the log.");
 											}
 										});
 									}
