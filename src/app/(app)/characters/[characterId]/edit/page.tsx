@@ -64,7 +64,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 						</Link>
 					</li>
 					{characterId === "new" ? (
-						<li>New Character</li>
+						<li className="dark:drop-shadow-md">New Character</li>
 					) : (
 						<>
 							<li>
