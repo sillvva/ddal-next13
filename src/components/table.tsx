@@ -6,10 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CSSProperties, useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { twMerge } from "tailwind-merge";
-
 import { mdiPencil, mdiPlus, mdiTrashCan } from "@mdi/js";
 import Icon from "@mdi/react";
-
 import { Items } from "./items";
 import { Markdown } from "./markdown";
 import { SearchResults } from "./search";

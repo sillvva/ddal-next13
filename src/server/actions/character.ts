@@ -1,7 +1,6 @@
 "use server";
 import { newCharacterSchema } from "$src/types/zod-schema";
 import { z } from "zod";
-
 import { getCharacter } from "../db/characters";
 import { prisma } from "../db/client";
 

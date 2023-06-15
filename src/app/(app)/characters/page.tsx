@@ -7,9 +7,10 @@ import { getServerSession } from "next-auth";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-
 import { mdiDotsHorizontal, mdiHome, mdiPlus } from "@mdi/js";
 import Icon from "@mdi/react";
+
+import type { Metadata } from "next";
 
 const charactersCookieSchema = {
 	name: "characters",
@@ -64,7 +65,6 @@ export default async function Page() {
 	);
 }
 
-import type { Metadata } from "next";
 export async function generateMetadata(): Promise<Metadata> {
 	const session = await getServerSession(authOptions);
 	const headersList = headers();

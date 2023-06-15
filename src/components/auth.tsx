@@ -2,7 +2,6 @@
 
 import { signIn, signOut } from "next-auth/react";
 import Image from "next/image";
-
 import google from "../../public/images/google.svg";
 
 export const HomeLogin = ({ domain }: { domain: string }) => {

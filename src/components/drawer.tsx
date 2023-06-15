@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { twMerge } from "tailwind-merge";
-
 import { mdiMenu } from "@mdi/js";
 import Icon from "@mdi/react";
 

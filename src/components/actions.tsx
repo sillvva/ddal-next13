@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
-
 import { PageLoader } from "./portals";
 
 import type { DeleteCharacterFunction } from "$src/server/actions/character";

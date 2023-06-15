@@ -7,11 +7,9 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { twMerge } from "tailwind-merge";
 import { z } from "zod";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { mdiAlertCircle, mdiTrashCan } from "@mdi/js";
 import Icon from "@mdi/react";
-
 import AutoFillSelect from "./autofill";
 import AutoResizeTextArea from "./textarea";
 

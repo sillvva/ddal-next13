@@ -1,7 +1,7 @@
 "use client";
+import { forwardRef, useEffect, useRef } from "react";
 
 import type { DetailedHTMLProps, PropsWithChildren, TextareaHTMLAttributes } from "react";
-import { forwardRef, useEffect, useRef } from "react";
 
 const AutoResizeTextArea = forwardRef<
 	HTMLTextAreaElement,

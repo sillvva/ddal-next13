@@ -1,7 +1,6 @@
 import { authOptions } from "$src/lib/auth";
 import { parseError } from "$src/lib/misc";
 import { getCharacter, getCharacters } from "$src/server/db/characters";
-import { prisma } from "$src/server/db/client";
 import { getServerSession as getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 

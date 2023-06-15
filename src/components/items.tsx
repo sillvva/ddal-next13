@@ -3,10 +3,8 @@
 import { Markdown } from "$src/components/markdown";
 import { useState } from "react";
 import { twMerge } from "tailwind-merge";
-
 import { mdiChevronDown, mdiChevronUp } from "@mdi/js";
 import Icon from "@mdi/react";
-
 import { SearchResults } from "./search";
 
 import type { MagicItem, StoryAward } from "@prisma/client";

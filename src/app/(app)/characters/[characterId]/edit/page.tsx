@@ -10,9 +10,10 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-
 import { mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
+
+import type { Metadata } from "next";
 
 export default async function Page({ params: { characterId } }: { params: { characterId: string } }) {
 	const session = await getServerSession(authOptions);
@@ -83,7 +84,6 @@ export default async function Page({ params: { characterId } }: { params: { char
 	);
 }
 
-import type { Metadata } from "next";
 export async function generateMetadata({ params: { characterId } }: { params: { characterId: string } }): Promise<Metadata> {
 	const headersList = headers();
 	const domain = headersList.get("host") || "";

@@ -4,9 +4,7 @@ import { parseError } from "$src/lib/misc";
 import { logSchema } from "$src/types/zod-schema";
 import { User } from "next-auth";
 import { z } from "zod";
-
 import { Character, DungeonMaster, Log } from "@prisma/client";
-
 import { getLevels } from "../db/characters";
 import { prisma } from "../db/client";
 
