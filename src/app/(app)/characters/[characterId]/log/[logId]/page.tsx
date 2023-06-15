@@ -29,46 +29,16 @@ export default async function Page({ params: { characterId, logId } }: { params:
 	let log = character.logs.find(log => log.id === logId);
 	if (logId !== "new" && !log) throw redirect(`/characters/${characterId}`);
 
-	if (!log)
-		log = {
-			saving: true,
-			characterId: characterId,
-			id: "",
-			name: "",
-			description: "",
-			date: new Date(),
-			type: "game",
-			created_at: new Date(),
-			experience: 0,
-			acp: 0,
-			tcp: 0,
-			level: 0,
-			gold: 0,
-			dtd: 0,
-			dungeonMasterId: "",
-			dm: {
-				id: "",
-				name: "",
-				DCI: null,
-				uid: ""
-			},
-			applied_date: new Date(),
-			is_dm_log: false,
-			magic_items_gained: [],
-			magic_items_lost: [],
-			story_awards_gained: [],
-			story_awards_lost: []
-		};
-
 	const actionSaveLog = async (data: z.infer<typeof logSchema>) => {
 		"use server";
 		const result = await saveCharacterLog(characterId, logId, data, session?.user);
 		if (result?.id) {
 			revalidatePath("/characters");
 			revalidatePath(`/characters/${characterId}`);
+			revalidatePath(`/characters/${characterId}/log/${result.id}`);
 			redirect(`/characters/${characterId}`);
 		}
-		return { id: null, error: "test" };
+		return result;
 	};
 
 	return (
@@ -88,7 +58,7 @@ export default async function Page({ params: { characterId, logId } }: { params:
 							{character.name}
 						</Link>
 					</li>
-					{log.name ? (
+					{log?.name ? (
 						<li className="overflow-hidden text-ellipsis whitespace-nowrap dark:drop-shadow-md">{log.name}</li>
 					) : (
 						<li className="dark:drop-shadow-md">New Log</li>

@@ -3,7 +3,7 @@
 import { formatDate } from "$src/lib/misc";
 import { CharacterData, getCharacter } from "$src/server/db/characters";
 import { logSchema, newCharacterSchema } from "$src/types/zod-schema";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { twMerge } from "tailwind-merge";
 import { z } from "zod";
@@ -171,7 +171,7 @@ export function EditCharacterLogForm({
 	saveLog
 }: {
 	id: string;
-	log: CharacterData["logs"][0];
+	log?: CharacterData["logs"][0];
 	dms: DungeonMaster[];
 	character: CharacterData;
 	saveLog: (data: z.infer<typeof logSchema>) => ReturnType<SaveCharacterLogFunction>;
@@ -181,15 +181,52 @@ export function EditCharacterLogForm({
 		resolver: zodResolver(logSchema)
 	});
 
-	const [season, setSeason] = useState<1 | 8 | 9>(log?.experience ? 1 : log?.acp ? 8 : 9);
-	const [type, setType] = useState<LogType>(log.type || "game");
-	const [saving, setSaving] = useState(false);
-	const [magicItemsGained, setMagicItemsGained] = useState(log.magic_items_gained.map(mi => ({ id: mi.id, name: mi.name, description: mi.description || "" })));
-	const [magicItemsLost, setMagicItemsLost] = useState<string[]>(log.magic_items_lost.map(mi => mi.id));
-	const [storyAwardsGained, setStoryAwardsGained] = useState(
-		(log?.story_awards_gained || []).map(mi => ({ id: mi.id, name: mi.name, description: mi.description || "" }))
+	const selectedLog = useMemo(
+		() =>
+			log || {
+				saving: true,
+				characterId: character.id,
+				id: "",
+				name: "",
+				description: "",
+				date: new Date(),
+				type: "game" as LogType,
+				created_at: new Date(),
+				experience: 0,
+				acp: 0,
+				tcp: 0,
+				level: 0,
+				gold: 0,
+				dtd: 0,
+				dungeonMasterId: "",
+				dm: {
+					id: "",
+					name: "",
+					DCI: null,
+					uid: ""
+				},
+				applied_date: new Date(),
+				is_dm_log: false,
+				magic_items_gained: [],
+				magic_items_lost: [],
+				story_awards_gained: [],
+				story_awards_lost: []
+			},
+		[log, character.id]
 	);
-	const [storyAwardsLost, setStoryAwardsLost] = useState<string[]>(log.story_awards_lost.map(mi => mi.id));
+
+	const [date, setDate] = useState(selectedLog.date);
+	const [season, setSeason] = useState<1 | 8 | 9>(selectedLog.experience ? 1 : selectedLog.acp ? 8 : 9);
+	const [type, setType] = useState<LogType>(selectedLog.type || "game");
+	const [saving, setSaving] = useState(false);
+	const [magicItemsGained, setMagicItemsGained] = useState(
+		selectedLog.magic_items_gained.map(mi => ({ id: mi.id, name: mi.name, description: mi.description || "" }))
+	);
+	const [magicItemsLost, setMagicItemsLost] = useState<string[]>(selectedLog.magic_items_lost.map(mi => mi.id));
+	const [storyAwardsGained, setStoryAwardsGained] = useState(
+		(selectedLog.story_awards_gained || []).map(mi => ({ id: mi.id, name: mi.name, description: mi.description || "" }))
+	);
+	const [storyAwardsLost, setStoryAwardsLost] = useState<string[]>(selectedLog.story_awards_lost.map(mi => mi.id));
 	const [mutError, setMutError] = useState<string | null>(null);
 
 	const magicItems = character
@@ -222,12 +259,12 @@ export function EditCharacterLogForm({
 		if (activeName === "dm.DCI" && !form.getValues("dm.DCI")) return;
 
 		const acp = form.getValues("acp");
-		if (character.total_level == 20 && acp - log.acp > 0) {
+		if (character.total_level == 20 && acp - selectedLog.acp > 0) {
 			form.setError("acp", { message: "ACP cannot be gained at level 20." });
 			return;
 		}
 		const level = form.getValues("level") * 1;
-		if (character.total_level + level - log.level > 20 && level > 0) {
+		if (character.total_level + level - selectedLog.level > 20 && level > 0) {
 			form.setError("level", { message: "Character cannot exceed level 20." });
 			return;
 		}
@@ -244,6 +281,8 @@ export function EditCharacterLogForm({
 		values.magic_items_lost = magicItemsLost;
 		values.story_awards_gained = storyAwardsGained;
 		values.story_awards_lost = storyAwardsLost;
+
+		if (!selectedLog.id) values.date = date.toISOString();
 
 		const parsedResult = logSchema.safeParse(values);
 		if (parsedResult.success) {
@@ -286,7 +325,13 @@ export function EditCharacterLogForm({
 		}
 	}, [saving, isPending]);
 
-	if (id !== "new" && !log.name) {
+	useEffect(() => {
+		if (!selectedLog.id) {
+			setDate(new Date());
+		}
+	}, [selectedLog]);
+
+	if (id !== "new" && !selectedLog.name) {
 		return <></>;
 	}
 
@@ -304,9 +349,9 @@ export function EditCharacterLogForm({
 			<form onSubmit={submitHandler}>
 				<input type="hidden" {...form.register("characterId", { value: character.id })} />
 				<input type="hidden" {...form.register("logId", { value: id === "new" ? "" : id })} />
-				<input type="hidden" {...form.register("is_dm_log", { value: log.is_dm_log })} />
+				<input type="hidden" {...form.register("is_dm_log", { value: selectedLog.is_dm_log })} />
 				<div className="grid grid-cols-12 gap-4">
-					{!log.is_dm_log && (
+					{!selectedLog.is_dm_log && (
 						<div className="form-control col-span-12 sm:col-span-4">
 							<label className="label">
 								<span className="label-text">Log Type</span>
@@ -317,7 +362,7 @@ export function EditCharacterLogForm({
 							</select>
 						</div>
 					)}
-					<div className={twMerge("form-control col-span-12", log.is_dm_log ? "sm:col-span-6" : "sm:col-span-4")}>
+					<div className={twMerge("form-control col-span-12", selectedLog.is_dm_log ? "sm:col-span-6" : "sm:col-span-4")}>
 						<label className="label">
 							<span className="label-text">
 								Title
@@ -326,7 +371,7 @@ export function EditCharacterLogForm({
 						</label>
 						<input
 							type="text"
-							{...form.register("name", { required: true, value: log.name, disabled: saving })}
+							{...form.register("name", { required: true, value: selectedLog.name, disabled: saving })}
 							className="input-bordered input w-full focus:border-primary"
 							aria-invalid={form.formState.errors.name ? "true" : "false"}
 						/>
@@ -334,7 +379,7 @@ export function EditCharacterLogForm({
 							<span className="label-text-alt text-error">{form.formState.errors.name?.message}</span>
 						</label>
 					</div>
-					<div className={twMerge("form-control col-span-12", log.is_dm_log ? "sm:col-span-6" : "sm:col-span-4")}>
+					<div className={twMerge("form-control col-span-12", selectedLog.is_dm_log ? "sm:col-span-6" : "sm:col-span-4")}>
 						<label className="label">
 							<span className="label-text">
 								Date
@@ -345,9 +390,9 @@ export function EditCharacterLogForm({
 							type="datetime-local"
 							{...form.register("date", {
 								required: true,
-								value: formatDate(log.date),
+								value: formatDate(date),
 								disabled: saving,
-								setValueAs: (v: string) => new Date(v || formatDate(log.date)).toISOString()
+								setValueAs: (v: string) => new Date(v || formatDate(date)).toISOString()
 							})}
 							className="input-bordered input w-full focus:border-primary"
 							aria-invalid={form.formState.errors.date ? "true" : "false"}
@@ -359,12 +404,12 @@ export function EditCharacterLogForm({
 					<div className="col-span-12 grid grid-cols-12 gap-4">
 						{type === "game" && (
 							<>
-								<input type="hidden" {...form.register("dm.id", { value: log.dm?.id || "" })} />
-								{log.is_dm_log ? (
+								<input type="hidden" {...form.register("dm.id", { value: selectedLog.dm?.id || "" })} />
+								{selectedLog.is_dm_log ? (
 									<>
-										<input type="hidden" {...form.register("dm.name", { value: log.dm?.name || "" })} />
-										<input type="hidden" {...form.register("dm.DCI", { value: log.dm?.DCI || "" })} />
-										<input type="hidden" {...form.register("dm.uid", { value: log.dm?.uid || "" })} />
+										<input type="hidden" {...form.register("dm.name", { value: selectedLog.dm?.name || "" })} />
+										<input type="hidden" {...form.register("dm.DCI", { value: selectedLog.dm?.DCI || "" })} />
+										<input type="hidden" {...form.register("dm.uid", { value: selectedLog.dm?.uid || "" })} />
 									</>
 								) : (
 									<>
@@ -375,7 +420,7 @@ export function EditCharacterLogForm({
 											<AutoFillSelect
 												type="text"
 												inputProps={form.register("dm.name", {
-													value: log.dm?.name || "",
+													value: selectedLog.dm?.name || "",
 													disabled: saving
 												})}
 												values={dms?.map(dm => ({ key: dm.name, value: dm.name + (dm.DCI ? ` (${dm.DCI})` : "") })) || []}
@@ -394,7 +439,7 @@ export function EditCharacterLogForm({
 											<AutoFillSelect
 												type="number"
 												inputProps={form.register("dm.DCI", {
-													value: log.dm?.DCI || null,
+													value: selectedLog.dm?.DCI || null,
 													disabled: saving
 												})}
 												values={dms?.map(dm => ({ key: dm.DCI, value: dm.name + (dm.DCI ? ` (${dm.DCI})` : "") })) || []}
@@ -429,7 +474,7 @@ export function EditCharacterLogForm({
 										</label>
 										<input
 											type="number"
-											{...form.register("experience", { value: log.experience, disabled: saving, valueAsNumber: true })}
+											{...form.register("experience", { value: selectedLog.experience, disabled: saving, valueAsNumber: true })}
 											className="input-bordered input w-full focus:border-primary"
 										/>
 										<label className="label">
@@ -445,11 +490,11 @@ export function EditCharacterLogForm({
 										<input
 											type="number"
 											min="0"
-											max={Math.max(log.level, character ? 20 - character.total_level : 19)}
+											max={Math.max(selectedLog.level, character ? 20 - character.total_level : 19)}
 											{...form.register("level", {
-												value: log.level,
+												value: selectedLog.level,
 												min: 0,
-												max: Math.max(log.level, character ? 20 - character.total_level : 19),
+												max: Math.max(selectedLog.level, character ? 20 - character.total_level : 19),
 												disabled: saving,
 												valueAsNumber: true
 											})}
@@ -471,7 +516,7 @@ export function EditCharacterLogForm({
 										</label>
 										<input
 											type="number"
-											{...form.register("acp", { value: log.acp, disabled: saving, valueAsNumber: true })}
+											{...form.register("acp", { value: selectedLog.acp, disabled: saving, valueAsNumber: true })}
 											className="input-bordered input w-full focus:border-primary"
 										/>
 										<label className="label">
@@ -485,7 +530,7 @@ export function EditCharacterLogForm({
 									</label>
 									<input
 										type="number"
-										{...form.register("tcp", { value: log.tcp, disabled: saving, valueAsNumber: true })}
+										{...form.register("tcp", { value: selectedLog.tcp, disabled: saving, valueAsNumber: true })}
 										className="input-bordered input w-full focus:border-primary"
 									/>
 									<label className="label">
@@ -500,7 +545,7 @@ export function EditCharacterLogForm({
 							</label>
 							<input
 								type="number"
-								{...form.register("gold", { value: log.gold, disabled: saving, valueAsNumber: true })}
+								{...form.register("gold", { value: selectedLog.gold, disabled: saving, valueAsNumber: true })}
 								className="input-bordered input w-full focus:border-primary"
 							/>
 							<label className="label">
@@ -513,7 +558,7 @@ export function EditCharacterLogForm({
 							</label>
 							<input
 								type="number"
-								{...form.register("dtd", { value: log.dtd, disabled: saving, valueAsNumber: true })}
+								{...form.register("dtd", { value: selectedLog.dtd, disabled: saving, valueAsNumber: true })}
 								className="input-bordered input w-full focus:border-primary"
 							/>
 							<label className="label">
@@ -526,7 +571,7 @@ export function EditCharacterLogForm({
 							<span className="label-text">Notes</span>
 						</label>
 						<AutoResizeTextArea
-							{...form.register("description", { value: log.description || "", disabled: saving })}
+							{...form.register("description", { value: selectedLog.description || "", disabled: saving })}
 							className="textarea-bordered textarea w-full focus:border-primary"
 						/>
 						<label className="label">
@@ -538,7 +583,7 @@ export function EditCharacterLogForm({
 						<button type="button" className="btn-primary btn-sm btn min-w-fit flex-1 sm:flex-none" onClick={addMagicItem} disabled={saving}>
 							Add Magic Item
 						</button>
-						{!log.is_dm_log && magicItems.filter(item => !magicItemsLost.includes(item.id)).length > 0 && (
+						{!selectedLog.is_dm_log && magicItems.filter(item => !magicItemsLost.includes(item.id)).length > 0 && (
 							<button type="button" className="btn-sm btn min-w-fit flex-1 sm:flex-none" onClick={addLostMagicItem} disabled={saving}>
 								Drop Magic Item
 							</button>
@@ -548,7 +593,7 @@ export function EditCharacterLogForm({
 								<button type="button" className="btn-primary btn-sm btn min-w-fit flex-1 sm:flex-none" onClick={addStoryAward} disabled={saving}>
 									Add Story Award
 								</button>
-								{!log.is_dm_log && storyAwards.filter(item => !storyAwardsLost.includes(item.id)).length > 0 && (
+								{!selectedLog.is_dm_log && storyAwards.filter(item => !storyAwardsLost.includes(item.id)).length > 0 && (
 									<button type="button" className="btn-sm btn min-w-fit flex-1 sm:flex-none" onClick={addLostStoryAward} disabled={saving}>
 										Drop Story Award
 									</button>
@@ -620,7 +665,7 @@ export function EditCharacterLogForm({
 												}}
 												disabled={saving}
 												className="select-bordered select w-full">
-												{[...log.magic_items_lost.filter(i => i.id === id), ...magicItems].map(item => (
+												{[...selectedLog.magic_items_lost.filter(i => i.id === id), ...magicItems].map(item => (
 													<option key={item.id} value={item.id}>
 														{item.name}
 													</option>
@@ -700,7 +745,7 @@ export function EditCharacterLogForm({
 													setStoryAwardsLost(storyAwardsLost.map((item, i) => (i === index ? e.target.value : item)));
 												}}
 												className="select-bordered select w-full">
-												{[...log.story_awards_lost.filter(i => i.id === id), ...storyAwards].map(item => (
+												{[...selectedLog.story_awards_lost.filter(i => i.id === id), ...storyAwards].map(item => (
 													<option key={item.id} value={item.id}>
 														{item.name}
 													</option>

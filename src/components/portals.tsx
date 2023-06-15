@@ -1,6 +1,10 @@
+"use client";
+
+import { canUseDOM } from "$src/lib/misc";
 import { createPortal } from "react-dom";
 
 export function PageLoader({ state }: { state: boolean }) {
+	if (!canUseDOM()) return null;
 	return createPortal(
 		state && (
 			<>
