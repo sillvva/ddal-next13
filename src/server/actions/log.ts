@@ -4,7 +4,7 @@ import { parseError } from "$src/lib/misc";
 import { logSchema } from "$src/types/zod-schema";
 import { User } from "next-auth";
 import { z } from "zod";
-import { Character, DungeonMaster, Log } from "@prisma/client";
+import { DungeonMaster, Log } from "@prisma/client";
 import { getLevels } from "../db/characters";
 import { prisma } from "../db/client";
 
@@ -261,18 +261,12 @@ export async function deleteLog(logId: string, userId?: string) {
 					id: logId
 				},
 				include: {
-					dm: true
+					dm: true,
+					character: true
 				}
 			});
-			let character: Character | null = null;
-			if (log?.characterId) {
-				character = await tx.character.findUnique({
-					where: {
-						id: log.characterId || ""
-					}
-				});
-				if (character?.userId !== userId) throw new Error("Not authorized");
-			} else if (log?.dm && log.dm.uid !== userId) throw new Error("Not authorized");
+			if (log?.character && log.character.userId !== userId) throw new Error("Not authorized");
+			else if (log?.dm && log.dm.uid !== userId) throw new Error("Not authorized");
 			await tx.magicItem.updateMany({
 				where: {
 					logLostId: logId
@@ -304,7 +298,7 @@ export async function deleteLog(logId: string, userId?: string) {
 					id: logId
 				}
 			});
-			return character;
+			return log;
 		});
 		return { id: result?.id || null, error: null };
 	} catch (error) {

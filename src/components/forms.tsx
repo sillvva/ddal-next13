@@ -807,8 +807,18 @@ export function EditDMLogForm({
 		const activeName = document.activeElement?.getAttribute("name");
 		if (activeName === "characterName" && !form.getValues("characterId")) return;
 
-		if (!(characters || []).map(c => c.id).find(c => form.getValues("characterId"))) {
+		if (form.getValues("characterName") && !(characters || []).map(c => c.id).find(c => form.getValues("characterId"))) {
 			form.setError("characterId", { type: "manual", message: "Character not found" });
+			return;
+		}
+
+		if (form.getValues("characterName") && !form.getValues("applied_date")) {
+			form.setError("applied_date", { type: "manual", message: "Applied date is required if assigned character is entered" });
+			return;
+		}
+
+		if (form.getValues("applied_date") && !form.getValues("characterId")) {
+			form.setError("characterId", { type: "manual", message: "Assigned character is required if applied date is entered" });
 			return;
 		}
 
