@@ -1,7 +1,27 @@
 "use server";
 
 import { prisma } from "$src/server/db/client";
-import { getUserDMsWithLogs } from "../db/dms";
+import { dungeonMasterSchema } from "$src/types/zod-schema";
+import { z } from "zod";
+import { getUserDMs, getUserDMsWithLogs } from "../db/dms";
+
+export type SaveDMResult = ReturnType<typeof saveDM>;
+export async function saveDM(dmId: string, userId: string, data: z.infer<typeof dungeonMasterSchema>) {
+	try {
+		const dms = await getUserDMs(userId);
+		if (!dms.find(dm => dm.id === dmId)) throw new Error("You do not have permission to edit this DM");
+		const result = await prisma.dungeonMaster.update({
+			where: { id: dmId },
+			data: {
+				...data
+			}
+		});
+		return { id: result.id, error: null };
+	} catch (error) {
+		if (error instanceof Error) return { id: null, error: error.message };
+		else return { id: null, error: "An unknown error has occurred." };
+	}
+}
 
 export type DeleteDMResult = ReturnType<typeof deleteDM>;
 export async function deleteDM(dmId: string, userId?: string) {
