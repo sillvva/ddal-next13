@@ -288,7 +288,7 @@ export function EditCharacterLogForm({
 			startTransition(async () => {
 				const result = await saveLog(parsedResult.data);
 				if (result.error) {
-					alert(result.error);
+					setMutError(result.error);
 					setSaving(false);
 				}
 			});
@@ -832,7 +832,7 @@ export function EditDMLogForm({
 			startTransition(async () => {
 				const result = await saveLog(parsedResult.data);
 				if (result.error) {
-					alert(result.error);
+					setMutError(result.error);
 					setSaving(false);
 				}
 			});
@@ -917,9 +917,9 @@ export function EditDMLogForm({
 							type="datetime-local"
 							className="input-bordered input w-full focus:border-primary"
 							{...form.register("date", {
-								value: formatDate(log.date),
+								value: formatDate(date),
 								required: true,
-								setValueAs: (v: string) => new Date(v || formatDate(log.date)).toISOString(),
+								setValueAs: (v: string) => new Date(v || formatDate(date)).toISOString(),
 								disabled: saving
 							})}
 						/>
