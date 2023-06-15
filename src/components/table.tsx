@@ -1,6 +1,8 @@
 "use client";
 
 import type { DeleteLogResult } from "$src/server/actions/log";
+import { DeleteDMResult } from "$src/server/actions/dm";
+import { UserDMsWithLogs } from "$src/server/db/dms";
 import { DMLogData } from "$src/server/db/log";
 import MiniSearch from "minisearch";
 import Link from "next/link";
@@ -880,5 +882,81 @@ const DMLogRow = ({
 				</tr>
 			)}
 		</>
+	);
+};
+
+export function DMTable({ dms, deleteDM }: { dms: UserDMsWithLogs; deleteDM: (dm: UserDMsWithLogs[0]) => DeleteDMResult }) {
+	return (
+		<div className="flex flex-col gap-4">
+			<section>
+				<div className="w-full overflow-x-auto rounded-lg bg-base-100">
+					<table className="table w-full">
+						<thead>
+							<tr className="bg-base-300">
+								<th className="">Name</th>
+								<th className="">DCI</th>
+								<th className="">Logs</th>
+								<th className="print:hidden"></th>
+							</tr>
+						</thead>
+						<tbody>
+							{!dms || dms.length == 0 ? (
+								<tr>
+									<td colSpan={4} className="py-20 text-center">
+										<p className="mb-4">You have no DMs.</p>
+									</td>
+								</tr>
+							) : (
+								dms.map(dm => <DMTableRow key={dm.id} dm={dm} deleteDM={deleteDM} />)
+							)}
+						</tbody>
+					</table>
+				</div>
+			</section>
+		</div>
+	);
+}
+
+const DMTableRow = ({ dm, deleteDM }: { dm: UserDMsWithLogs[0]; deleteDM: (dm: UserDMsWithLogs[0]) => DeleteDMResult }) => {
+	const [isPending, startTransition] = useTransition();
+	const [deleting, setDeleting] = useState(false);
+
+	useEffect(() => {
+		if (!isPending && deleting) {
+			setTimeout(() => setDeleting(false), 1000);
+		}
+	}, [deleting, isPending]);
+
+	return (
+		<tr key={dm.id} className={twMerge(deleting && "hidden", isPending && "opacity-40")}>
+			<td>{dm.name}</td>
+			<td>{dm.DCI}</td>
+			<td>{dm.logs.length}</td>
+			<td className="w-16 print:hidden">
+				<div className="flex flex-row justify-center gap-2">
+					<Link href={`/dms/${dm.id}`} className="btn-primary btn-sm btn">
+						<Icon path={mdiPencil} size={0.8} />
+					</Link>
+					{dm.logs.length == 0 && (
+						<button
+							className="btn-sm btn"
+							onClick={async () => {
+								if (confirm(`Are you sure you want to delete ${dm.name}? This action cannot be reversed.`)) {
+									setDeleting(true);
+									startTransition(async () => {
+										const result = await deleteDM(dm);
+										if (result.error) {
+											alert(result.error);
+											setDeleting(false);
+										}
+									});
+								}
+							}}>
+							<Icon path={mdiTrashCan} size={0.8} />
+						</button>
+					)}
+				</div>
+			</td>
+		</tr>
 	);
 };
