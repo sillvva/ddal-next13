@@ -872,6 +872,10 @@ export function EditDMLogForm({
 		}
 	}, [log]);
 
+	useEffect(() => {
+		form.setValue("date", formatDate(date));
+	}, [date, form]);
+
 	return (
 		<>
 			{mutError && (

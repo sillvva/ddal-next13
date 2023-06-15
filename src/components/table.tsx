@@ -589,7 +589,13 @@ const dmLogSearch = new MiniSearch({
 	}
 });
 
-export function DMLogTable({ logs, deleteLog }: { logs: DMLogData; deleteLog: (logId: string) => ReturnType<DeleteLogFunction> }) {
+export function DMLogTable({
+	logs,
+	deleteLog
+}: {
+	logs: (DMLogData[0] & { dateString: string })[];
+	deleteLog: (log: DMLogData[0]) => ReturnType<DeleteLogFunction>;
+}) {
 	const [search, setSearch] = useState("");
 	const [modal, setModal] = useState<{ name: string; description: string; date?: Date } | null>(null);
 
@@ -695,8 +701,8 @@ const DMLogRow = ({
 	search,
 	triggerModal
 }: {
-	log: DMLogData[0];
-	deleteLog: (logId: string) => ReturnType<DeleteLogFunction>;
+	log: DMLogData[0] & { dateString: string };
+	deleteLog: (log: DMLogData[0]) => ReturnType<DeleteLogFunction>;
 	search: string;
 	triggerModal: () => void;
 }) => {
@@ -720,7 +726,7 @@ const DMLogRow = ({
 					<p className="whitespace-pre-wrap font-semibold text-accent-content" onClick={() => triggerModal()}>
 						<SearchResults text={log.name} search={search} />
 					</p>
-					<p className="text-netural-content text-xs font-normal">{(log.is_dm_log && log.applied_date ? log.applied_date : log.date).toLocaleString()}</p>
+					<p className="text-netural-content text-xs font-normal">{log.dateString}</p>
 					{log.character && (
 						<p className="text-sm font-normal">
 							<span className="font-semibold">Character:</span>{" "}
@@ -843,7 +849,7 @@ const DMLogRow = ({
 									setDeleting(true);
 									startTransition(async () => {
 										try {
-											const result = await deleteLog(log.id);
+											const result = await deleteLog(log);
 											if (result.error) throw new Error(result.error);
 										} catch (error) {
 											if (error instanceof Error) alert(error.message);

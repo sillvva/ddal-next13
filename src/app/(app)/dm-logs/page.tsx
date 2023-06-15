@@ -2,12 +2,13 @@ import { DMLogTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { deleteLog } from "$src/server/actions/log";
-import { getDMLogs } from "$src/server/db/log";
+import { DMLogData, getDMLogs } from "$src/server/db/log";
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { mdiDotsHorizontal, mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
 
@@ -16,16 +17,18 @@ export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
 
-	const logs = await getDMLogs(session.user.id, session.user.name || "");
+	const logs = (await getDMLogs(session.user.id, session.user.name || "")).map(log => ({
+		...log,
+		dateString: new Date(log.date).toLocaleString("en-US")
+	}));
 
-	const actionDeleteLog = async (logId: string) => {
+	const actionDeleteLog = async (log: DMLogData[0]) => {
 		"use server";
-		const result = await deleteLog(logId, session?.user?.id);
+		const result = await deleteLog(log.id, session?.user?.id);
 		if (result.id) {
 			revalidatePath(`/dm-logs/${result.id}`);
 			revalidatePath("/dm-logs");
-			const log = logs.find(log => log.id === result.id);
-			if (log?.characterId) {
+			if (log.characterId) {
 				revalidatePath(`/characters/${log.characterId}`);
 				revalidatePath("/characters");
 			}
@@ -65,7 +68,9 @@ export default async function Page() {
 				</div>
 			</div>
 
-			<DMLogTable logs={logs} deleteLog={actionDeleteLog} />
+			<Suspense>
+				<DMLogTable logs={logs} deleteLog={actionDeleteLog} />
+			</Suspense>
 		</div>
 	);
 }
