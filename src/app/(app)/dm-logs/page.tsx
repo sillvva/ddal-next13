@@ -8,7 +8,6 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 import { mdiDotsHorizontal, mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
 
@@ -69,9 +68,7 @@ export default async function Page() {
 				</div>
 			</div>
 
-			<Suspense>
-				<DMLogTable logs={logs} deleteLog={actionDeleteLog} />
-			</Suspense>
+			<DMLogTable logs={logs} deleteLog={actionDeleteLog} />
 		</div>
 	);
 }

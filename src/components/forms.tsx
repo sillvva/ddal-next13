@@ -15,8 +15,8 @@ import AutoFillSelect from "./autofill";
 import AutoResizeTextArea from "./textarea";
 
 import type { DungeonMaster, LogType, MagicItem } from "@prisma/client";
-import type { SaveCharacterFunction } from "$src/server/actions/character";
-import type { SaveCharacterLogFunction } from "$src/server/actions/log";
+import type { SaveCharacterResult } from "$src/server/actions/character";
+import type { SaveLogResult } from "$src/server/actions/log";
 
 export function EditCharacterForm({
 	id,
@@ -25,7 +25,7 @@ export function EditCharacterForm({
 }: {
 	id: string;
 	character: z.infer<typeof newCharacterSchema>;
-	editCharacter: (data: z.infer<typeof newCharacterSchema>) => ReturnType<SaveCharacterFunction>;
+	editCharacter: (data: z.infer<typeof newCharacterSchema>) => SaveCharacterResult;
 }) {
 	const [isPending, startTransition] = useTransition();
 	const [saving, setSaving] = useState(false);
@@ -173,7 +173,7 @@ export function EditCharacterLogForm({
 	log?: CharacterData["logs"][0];
 	dms: DungeonMaster[];
 	character: CharacterData;
-	saveLog: (data: z.infer<typeof logSchema>) => ReturnType<SaveCharacterLogFunction>;
+	saveLog: (data: z.infer<typeof logSchema>) => SaveLogResult;
 }) {
 	const [isPending, startTransition] = useTransition();
 	const [saving, setSaving] = useState(false);
@@ -783,7 +783,7 @@ export function EditDMLogForm({
 	id: string;
 	log: LogData;
 	characters: CharacterData[];
-	saveLog: (data: z.infer<typeof logSchema>) => ReturnType<SaveCharacterLogFunction>;
+	saveLog: (data: z.infer<typeof logSchema>) => SaveLogResult;
 }) {
 	const [isPending, startTransition] = useTransition();
 	const [saving, setSaving] = useState(false);

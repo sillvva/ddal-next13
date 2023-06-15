@@ -6,7 +6,7 @@ import { prisma } from "../db/client";
 
 import type { Character } from "@prisma/client";
 
-export type SaveCharacterFunction = typeof saveCharacter;
+export type SaveCharacterResult = ReturnType<typeof saveCharacter>;
 export async function saveCharacter(characterId: string, userId: string, data: z.infer<typeof newCharacterSchema>) {
 	try {
 		if (!characterId) throw new Error("No character ID provided.");
@@ -37,7 +37,7 @@ export async function saveCharacter(characterId: string, userId: string, data: z
 	}
 }
 
-export type DeleteCharacterFunction = typeof deleteCharacter;
+export type DeleteCharacterResult = ReturnType<typeof deleteCharacter>;
 export async function deleteCharacter(characterId: string, userId?: string) {
 	try {
 		if (!userId) throw new Error("Not authenticated");

@@ -2,9 +2,9 @@
 import { useEffect, useState, useTransition } from "react";
 import { PageLoader } from "./portals";
 
-import type { DeleteCharacterFunction } from "$src/server/actions/character";
+import type { DeleteCharacterResult } from "$src/server/actions/character";
 
-export function DeleteCharacter({ characterId, deleteCharacter }: { characterId: string; deleteCharacter: DeleteCharacterFunction }) {
+export function DeleteCharacter({ characterId, deleteCharacter }: { characterId: string; deleteCharacter: (characterId: string) => DeleteCharacterResult }) {
 	const [isPending, startTransition] = useTransition();
 	const [deleting, setDeleting] = useState(false);
 

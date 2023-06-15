@@ -1,6 +1,6 @@
 "use client";
 
-import type { DeleteLogFunction } from "$src/server/actions/log";
+import type { DeleteLogResult } from "$src/server/actions/log";
 import { DMLogData } from "$src/server/db/log";
 import MiniSearch from "minisearch";
 import Link from "next/link";
@@ -209,7 +209,7 @@ export function CharacterLogTable({
 	character: CharacterData;
 	userId: string;
 	cookie: { name: string; value: CharacterCookie };
-	deleteLog: (logId: string) => ReturnType<DeleteLogFunction>;
+	deleteLog: (logId: string) => DeleteLogResult;
 	revalidate: () => Promise<void>;
 }) {
 	const myCharacter = character.userId === userId;
@@ -375,7 +375,7 @@ const CharacterLogRow = ({
 	characterUserId: string;
 	userId: string;
 	descriptions: boolean;
-	deleteLog: (logId: string) => ReturnType<DeleteLogFunction>;
+	deleteLog: (logId: string) => DeleteLogResult;
 	search: string;
 	triggerModal: () => void;
 }) => {
@@ -589,13 +589,7 @@ const dmLogSearch = new MiniSearch({
 	}
 });
 
-export function DMLogTable({
-	logs,
-	deleteLog
-}: {
-	logs: (DMLogData[0] & { dateString: string })[];
-	deleteLog: (log: DMLogData[0]) => ReturnType<DeleteLogFunction>;
-}) {
+export function DMLogTable({ logs, deleteLog }: { logs: (DMLogData[0] & { dateString: string })[]; deleteLog: (log: DMLogData[0]) => DeleteLogResult }) {
 	const [search, setSearch] = useState("");
 	const [modal, setModal] = useState<{ name: string; description: string; date?: Date } | null>(null);
 
@@ -702,7 +696,7 @@ const DMLogRow = ({
 	triggerModal
 }: {
 	log: DMLogData[0] & { dateString: string };
-	deleteLog: (log: DMLogData[0]) => ReturnType<DeleteLogFunction>;
+	deleteLog: (log: DMLogData[0]) => DeleteLogResult;
 	search: string;
 	triggerModal: () => void;
 }) => {
