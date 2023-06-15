@@ -47,7 +47,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 								DMs
 							</Link>
 							<div className="flex-1">&nbsp;</div>
-							<a href="https://github.com/sillvva/adventurers-league-log" target="_blank" rel="noreferrer noopener" className="hidden items-center p-2 sm:flex">
+							<a href="https://github.com/sillvva/ddal-next13" target="_blank" rel="noreferrer noopener" className="hidden items-center p-2 sm:flex">
 								<Icon path={mdiGithub} size={1} />
 							</a>
 							<a href="http://paypal.me/Sillvva" target="_blank" rel="noreferrer noopener" className="hidden items-center p-2 sm:flex">
