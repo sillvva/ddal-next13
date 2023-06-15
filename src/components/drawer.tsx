@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { twMerge } from "tailwind-merge";
-
 import { mdiMenu } from "@mdi/js";
 import Icon from "@mdi/react";
 
@@ -41,7 +40,7 @@ export const Drawer = () => {
 				<div className="divider"></div>
 				<ul className="menu w-full">
 					<li>
-						<a href="https://github.com/sillvva/adventurers-league-log" target="_blank" rel="noreferrer noopener" className="items-center sm:hidden">
+						<a href="https://github.com/sillvva/ddal-next13" target="_blank" rel="noreferrer noopener" className="items-center sm:hidden">
 							Github
 						</a>
 					</li>

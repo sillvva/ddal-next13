@@ -67,3 +67,7 @@ export const tooltipClasses = (text?: string | null, align = "center") => {
 		text?.trim() && "tooltip"
 	);
 };
+
+export function canUseDOM() {
+	return !!(typeof window !== "undefined" && window.document && window.document.createElement);
+}

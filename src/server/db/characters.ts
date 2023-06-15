@@ -1,5 +1,6 @@
-import type { DungeonMaster, Log, MagicItem, StoryAward } from "@prisma/client";
 import { prisma } from "$src/server/db/client";
+
+import type { DungeonMaster, Log, MagicItem, StoryAward } from "@prisma/client";
 
 export async function getCharacter(characterId: string) {
 	const character = await prisma.character.findFirst({

@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import type { Metadata } from "next";
+
 export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session) throw redirect("/");
@@ -11,7 +13,6 @@ export default async function Page() {
 	return <>DMs</>;
 }
 
-import type { Metadata } from "next";
 export async function generateMetadata(): Promise<Metadata> {
 	const session = await getServerSession(authOptions);
 	const headersList = headers();

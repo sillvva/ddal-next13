@@ -4,13 +4,14 @@ import { appMeta } from "$src/lib/meta";
 import { getCookie } from "$src/lib/store";
 import { getCharacters } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-
 import { mdiDotsHorizontal, mdiHome, mdiPlus } from "@mdi/js";
 import Icon from "@mdi/react";
 
+import type { Metadata } from "next";
 const charactersCookieSchema = {
 	name: "characters",
 	defaults: {
@@ -26,6 +27,11 @@ export default async function Page() {
 
 	const characters = await getCharacters(session.user.id);
 	const characterCookie = getCookie(charactersCookieSchema);
+
+	const actionRevalidate = async () => {
+		"use server";
+		revalidatePath(`/characters`);
+	};
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -59,12 +65,11 @@ export default async function Page() {
 				</div>
 			</div>
 
-			<CharactersTable characters={characters} cookie={{ name: charactersCookieSchema.name, value: characterCookie }} />
+			<CharactersTable characters={characters} cookie={{ name: charactersCookieSchema.name, value: characterCookie }} revalidate={actionRevalidate} />
 		</div>
 	);
 }
 
-import type { Metadata } from "next";
 export async function generateMetadata(): Promise<Metadata> {
 	const session = await getServerSession(authOptions);
 	const headersList = headers();

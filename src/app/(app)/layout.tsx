@@ -1,5 +1,4 @@
 import "$src/app/globals.css";
-
 import { HeaderLogin, MenuLogout } from "$src/components/auth";
 import { Drawer } from "$src/components/drawer";
 import { authOptions } from "$src/lib/auth";
@@ -9,10 +8,8 @@ import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { twMerge } from "tailwind-merge";
-
 import { mdiGithub } from "@mdi/js";
 import Icon from "@mdi/react";
-
 import background from "../../../public/images/barovia-gate.jpg";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -24,7 +21,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
 	return (
 		<html lang="en">
-			<body className={twMerge("min-h-screen bg-gray-300 text-base-content dark:bg-gray-800", inter.className)}>
+			<body className={twMerge("min-h-screen text-base-content", inter.className)}>
 				<Image
 					src={background}
 					alt="Background"
@@ -50,7 +47,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 								DMs
 							</Link>
 							<div className="flex-1">&nbsp;</div>
-							<a href="https://github.com/sillvva/adventurers-league-log" target="_blank" rel="noreferrer noopener" className="hidden items-center p-2 sm:flex">
+							<a href="https://github.com/sillvva/ddal-next13" target="_blank" rel="noreferrer noopener" className="hidden items-center p-2 sm:flex">
 								<Icon path={mdiGithub} size={1} />
 							</a>
 							<a href="http://paypal.me/Sillvva" target="_blank" rel="noreferrer noopener" className="hidden items-center p-2 sm:flex">

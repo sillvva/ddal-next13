@@ -1,9 +1,7 @@
 import "$src/app/globals.css";
-
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import { twMerge } from "tailwind-merge";
-
 import background from "../../../public/images/barovia-gate.jpg";
 
 const inter = Inter({ subsets: ["latin"] });

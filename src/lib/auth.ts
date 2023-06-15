@@ -1,7 +1,6 @@
 import { env } from "$src/env/server.mjs";
 import { prisma } from "$src/server/db/client";
 import GoogleProvider from "next-auth/providers/google";
-
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 
 import type { NextAuthOptions } from "next-auth";

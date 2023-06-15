@@ -13,7 +13,6 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-
 import { mdiDotsHorizontal, mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
 
@@ -55,6 +54,11 @@ export default async function Page({ params: { characterId } }: { params: { char
 			redirect("/characters");
 		}
 		return result;
+	};
+
+	const actionRevalidate = async () => {
+		"use server";
+		revalidatePath(`/characters/${characterId}`);
 	};
 
 	return (
@@ -164,6 +168,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 				userId={session?.user?.id || ""}
 				cookie={{ name: characterCookieSchema.name, value: characterCookie }}
 				deleteLog={actionDeleteLog}
+				revalidate={actionRevalidate}
 			/>
 		</>
 	);
