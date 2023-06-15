@@ -1,7 +1,7 @@
 import { EditCharacterLogForm } from "$src/components/forms";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
-import { saveCharacterLog } from "$src/server/actions/log";
+import { saveLog } from "$src/server/actions/log";
 import { getCharacter } from "$src/server/db/characters";
 import { getUserDMs } from "$src/server/db/dms";
 import { logSchema } from "$src/types/zod-schema";
@@ -30,7 +30,7 @@ export default async function Page({ params: { characterId, logId } }: { params:
 
 	const actionSaveLog = async (data: z.infer<typeof logSchema>) => {
 		"use server";
-		const result = await saveCharacterLog(characterId, logId, data, session?.user);
+		const result = await saveLog(characterId, logId, data, session?.user);
 		if (result?.id) {
 			revalidatePath("/characters");
 			revalidatePath(`/characters/${characterId}`);

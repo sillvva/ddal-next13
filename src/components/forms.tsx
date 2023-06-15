@@ -2,6 +2,7 @@
 
 import { formatDate } from "$src/lib/misc";
 import { CharacterData, getCharacter } from "$src/server/db/characters";
+import { LogData } from "$src/server/db/log";
 import { logSchema, newCharacterSchema } from "$src/types/zod-schema";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -13,10 +14,9 @@ import Icon from "@mdi/react";
 import AutoFillSelect from "./autofill";
 import AutoResizeTextArea from "./textarea";
 
-import type { DungeonMaster, LogType, MagicItem } from "@prisma/client";
+import type { DungeonMaster, Log, LogType, MagicItem } from "@prisma/client";
 import type { SaveCharacterFunction } from "$src/server/actions/character";
 import type { SaveCharacterLogFunction } from "$src/server/actions/log";
-
 export function EditCharacterForm({
 	id,
 	character,
@@ -175,6 +175,7 @@ export function EditCharacterLogForm({
 	saveLog: (data: z.infer<typeof logSchema>) => ReturnType<SaveCharacterLogFunction>;
 }) {
 	const [isPending, startTransition] = useTransition();
+	const [saving, setSaving] = useState(false);
 	const form = useForm<z.infer<typeof logSchema>>({
 		resolver: zodResolver(logSchema)
 	});
@@ -216,7 +217,6 @@ export function EditCharacterLogForm({
 	const [date, setDate] = useState(selectedLog.date);
 	const [season, setSeason] = useState<1 | 8 | 9>(selectedLog.experience ? 1 : selectedLog.acp ? 8 : 9);
 	const [type, setType] = useState<LogType>(selectedLog.type || "game");
-	const [saving, setSaving] = useState(false);
 	const [magicItemsGained, setMagicItemsGained] = useState(
 		selectedLog.magic_items_gained.map(mi => ({ id: mi.id, name: mi.name, description: mi.description || "" }))
 	);
@@ -758,6 +758,462 @@ export function EditCharacterLogForm({
 										</button>
 									</div>
 									<div className="text-sm">{storyAwards.find(item => storyAwardsLost[index] === item.id)?.description}</div>
+								</div>
+							</div>
+						))}
+					</div>
+					<div className="col-span-12 text-center">
+						<button type="submit" className={twMerge("btn-primary btn", saving && "loading")} disabled={saving}>
+							Save Log
+						</button>
+					</div>
+				</div>
+			</form>
+		</>
+	);
+}
+
+export function EditDMLogForm({
+	id,
+	log,
+	characters,
+	saveLog
+}: {
+	id: string;
+	log: LogData;
+	characters: CharacterData[];
+	saveLog: (data: z.infer<typeof logSchema>) => ReturnType<SaveCharacterLogFunction>;
+}) {
+	const [isPending, startTransition] = useTransition();
+	const [saving, setSaving] = useState(false);
+
+	const form = useForm<z.infer<typeof logSchema>>({
+		resolver: zodResolver(logSchema)
+	});
+
+	const [date, setDate] = useState(log.date);
+	const [season, setSeason] = useState<1 | 8 | 9>(log?.experience ? 1 : log?.acp ? 8 : 9);
+	const [magicItemsGained, setMagicItemsGained] = useState(log.magic_items_gained.map(mi => ({ id: mi.id, name: mi.name, description: mi.description || "" })));
+	const [storyAwardsGained, setStoryAwardsGained] = useState(
+		(log?.story_awards_gained || []).map(mi => ({ id: mi.id, name: mi.name, description: mi.description || "" }))
+	);
+	const [mutError, setMutError] = useState<string | null>(null);
+
+	const submitHandler = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+
+		const activeName = document.activeElement?.getAttribute("name");
+		if (activeName === "characterName" && !form.getValues("characterId")) return;
+
+		if (!(characters || []).map(c => c.id).find(c => form.getValues("characterId"))) {
+			form.setError("characterId", { type: "manual", message: "Character not found" });
+			return;
+		}
+
+		form.handleSubmit(onSubmit)(e);
+	};
+
+	const onSubmit: SubmitHandler<z.infer<typeof logSchema>> = e => {
+		form.clearErrors();
+
+		const values = form.getValues();
+		values.type = "game";
+		values.is_dm_log = true;
+		values.magic_items_gained = magicItemsGained;
+		values.magic_items_lost = [];
+		values.story_awards_gained = storyAwardsGained;
+		values.story_awards_lost = [];
+
+		if (!log.id) values.date = date.toISOString();
+
+		const parsedResult = logSchema.safeParse(values);
+		if (parsedResult.success) {
+			setSaving(true);
+			startTransition(async () => {
+				const result = await saveLog(parsedResult.data);
+				if (result.error) {
+					alert(result.error);
+					setSaving(false);
+				}
+			});
+		} else {
+			parsedResult.error.issues.forEach(issue => {
+				const issueFields = ["date", "name", "dm.name", "description", "characterId", "experience", "acp", "tcp", "level", "gold"] as const;
+				if (issueFields.find(i => i == issue.path.join("."))) {
+					form.setError(issue.path.join(".") as (typeof issueFields)[number], {
+						message: issue.message
+					});
+				}
+				if (issue.path[0] == "magic_items_gained" && typeof issue.path[1] == "number" && issue.path[2] == "name") {
+					form.setError(`magic_items_gained.${issue.path[1]}.name`, { message: issue.message });
+				}
+				if (issue.path[0] == "story_awards_gained" && typeof issue.path[1] == "number" && issue.path[2] == "name") {
+					form.setError(`story_awards_gained.${issue.path[1]}.name`, { message: issue.message });
+				}
+			});
+		}
+	};
+
+	const addMagicItem = () => setMagicItemsGained([...magicItemsGained, { id: "", name: "", description: "" }]);
+	const removeMagicItem = (index: number) => setMagicItemsGained(magicItemsGained.filter((_, i) => i !== index));
+
+	const addStoryAward = () => setStoryAwardsGained([...storyAwardsGained, { id: "", name: "", description: "" }]);
+	const removeStoryAward = (index: number) => setStoryAwardsGained(storyAwardsGained.filter((_, i) => i !== index));
+
+	useEffect(() => {
+		if (!isPending && saving) {
+			setTimeout(() => setSaving(false), 2000);
+		}
+	}, [saving, isPending]);
+
+	useEffect(() => {
+		if (!log.id) {
+			setDate(new Date());
+		}
+	}, [log]);
+
+	return (
+		<>
+			{mutError && (
+				<div className="alert alert-error shadow-lg">
+					<div>
+						<Icon path={mdiAlertCircle} size={1} />
+						<span>Error! Task failed successfully. I mean... {mutError}</span>
+					</div>
+				</div>
+			)}
+			<form onSubmit={submitHandler}>
+				<input type="hidden" {...form.register("logId", { value: id === "new" ? "" : id })} />
+				<input type="hidden" {...form.register("dm.id", { value: log.dm?.id || "" })} />
+				<input type="hidden" {...form.register("dm.DCI", { value: null })} />
+				<input type="hidden" {...form.register("dm.name", { value: log.dm?.name || "" })} />
+				<input type="hidden" {...form.register("dm.uid", { value: log.dm?.uid || "" })} />
+				<div className="grid grid-cols-12 gap-4">
+					<div className={twMerge("form-control col-span-12", log.is_dm_log ? "sm:col-span-6 lg:col-span-3" : "sm:col-span-4")}>
+						<label className="label">
+							<span className="label-text">
+								Title
+								<span className="text-error">*</span>
+							</span>
+						</label>
+						<input
+							type="text"
+							{...form.register("name", { required: true, value: log.name, disabled: saving })}
+							className="input-bordered input w-full focus:border-primary"
+							aria-invalid={form.formState.errors.name ? "true" : "false"}
+						/>
+						<label className="label">
+							<span className="label-text-alt text-error">{form.formState.errors.name?.message}</span>
+						</label>
+					</div>
+					<div className={twMerge("form-control col-span-12", log.is_dm_log ? "sm:col-span-6 lg:col-span-3" : "sm:col-span-4")}>
+						<label className="label">
+							<span className="label-text">
+								Date
+								<span className="text-error">*</span>
+							</span>
+						</label>
+						<input
+							type="datetime-local"
+							className="input-bordered input w-full focus:border-primary"
+							{...form.register("date", {
+								value: formatDate(log.date),
+								required: true,
+								setValueAs: (v: string) => new Date(v || formatDate(log.date)).toISOString(),
+								disabled: saving
+							})}
+						/>
+						<label className="label">
+							<span className="label-text-alt text-error">{form.formState.errors.date?.message}</span>
+						</label>
+					</div>
+					<input type="hidden" {...form.register("characterId", { value: log.characterId || "", required: !!form.watch().applied_date })} />
+					<div className="form-control col-span-12 sm:col-span-6 lg:col-span-3">
+						<label className="label">
+							<span className="label-text">
+								Assigned Character
+								{!!form.watch().applied_date && <span className="text-error">*</span>}
+							</span>
+						</label>
+						<AutoFillSelect
+							type="text"
+							inputProps={form.register("characterName", {
+								value: characters.find(c => c.id === log.characterId)?.name || "",
+								disabled: saving,
+								onChange: e => {
+									form.setValue("characterId", "");
+									form.setValue("applied_date", null);
+									form.trigger("applied_date");
+								}
+							})}
+							values={characters?.map(char => ({ key: char.id, value: char.name })) || []}
+							searchBy="value"
+							onSelect={val => {
+								const character = characters.find(c => c.id === val);
+								if (character) {
+									form.setValue("characterName", character?.name || "");
+									form.setValue("characterId", val.toString());
+									form.setError("characterId", { type: "manual", message: "" });
+								} else {
+									form.setValue("characterName", "");
+									form.setValue("characterId", "");
+								}
+								form.setValue("applied_date", null);
+								form.trigger("applied_date");
+							}}
+						/>
+						<label className="label">
+							<span className="label-text-alt text-error">{form.formState.errors.characterId?.message}</span>
+						</label>
+					</div>
+					<div className={twMerge("form-control col-span-12", "sm:col-span-6 lg:col-span-3")}>
+						<label className="label">
+							<span className="label-text">
+								Assigned Date
+								{!!form.watch().characterId && <span className="text-error">*</span>}
+							</span>
+						</label>
+						<input
+							type="datetime-local"
+							{...form.register("applied_date", {
+								value: log.applied_date ? formatDate(log.applied_date) : null,
+								required: !!form.watch().characterId,
+								setValueAs: (v: string) => (!form.watch().characterId ? null : formatDate(v) == "Invalid Date" ? "" : new Date(v).toISOString()),
+								disabled: saving
+							})}
+							className="input-bordered input w-full focus:border-primary"
+							aria-invalid={form.formState.errors.applied_date ? "true" : "false"}
+						/>
+						<label className="label">
+							<span className="label-text-alt text-error">{form.formState.errors.applied_date?.message}</span>
+						</label>
+					</div>
+					<div className="col-span-12 grid grid-cols-12 gap-4">
+						<div className="form-control col-span-12 sm:col-span-4">
+							<label className="label">
+								<span className="label-text">Season</span>
+							</label>
+							<select
+								value={season}
+								onChange={e => setSeason(parseInt(e.target.value) as 1 | 8 | 9)}
+								disabled={saving}
+								className="select-bordered select w-full">
+								<option value={9}>Season 9+</option>
+								<option value={8}>Season 8</option>
+								<option value={1}>Season 1-7</option>
+							</select>
+						</div>
+						{season === 1 && (
+							<div className="form-control col-span-6 w-full sm:col-span-4">
+								<label className="label">
+									<span className="label-text">Experience</span>
+								</label>
+								<input
+									type="number"
+									{...form.register("experience", {
+										value: log.experience,
+										disabled: saving,
+										valueAsNumber: true
+									})}
+									className="input-bordered input w-full focus:border-primary"
+								/>
+								<label className="label">
+									<span className="label-text-alt text-error">{form.formState.errors.experience?.message}</span>
+								</label>
+							</div>
+						)}
+						{season === 9 && (
+							<div className="form-control col-span-12 w-full sm:col-span-4">
+								<label className="label">
+									<span className="label-text">Level</span>
+								</label>
+								<input
+									type="number"
+									min="0"
+									max="1"
+									{...form.register("level", {
+										value: log.level,
+										min: 0,
+										max: 1,
+										disabled: saving,
+										valueAsNumber: true
+									})}
+									className="input-bordered input w-full focus:border-primary"
+								/>
+								<label className="label">
+									<span className="label-text-alt text-error">{form.formState.errors.level?.message}</span>
+								</label>
+							</div>
+						)}
+						{season === 8 && (
+							<>
+								<div className="form-control col-span-6 w-full sm:col-span-2">
+									<label className="label">
+										<span className="label-text">ACP</span>
+									</label>
+									<input
+										type="number"
+										{...form.register("acp", { value: log.acp, disabled: saving, valueAsNumber: true })}
+										className="input-bordered input w-full focus:border-primary"
+									/>
+									<label className="label">
+										<span className="label-text-alt text-error">{form.formState.errors.acp?.message}</span>
+									</label>
+								</div>
+								<div className={twMerge("form-control w-full", "col-span-6 sm:col-span-2")}>
+									<label className="label">
+										<span className="label-text">TCP</span>
+									</label>
+									<input
+										type="number"
+										{...form.register("tcp", { value: log.tcp, disabled: saving, valueAsNumber: true })}
+										className="input-bordered input w-full focus:border-primary"
+									/>
+									<label className="label">
+										<span className="label-text-alt text-error">{form.formState.errors.tcp?.message}</span>
+									</label>
+								</div>
+							</>
+						)}
+						<div className={twMerge("form-control w-full", "col-span-12 sm:col-span-2")}>
+							<label className="label">
+								<span className="label-text">Gold</span>
+							</label>
+							<input
+								type="number"
+								{...form.register("gold", { value: log.gold, disabled: saving, valueAsNumber: true })}
+								className="input-bordered input w-full focus:border-primary"
+							/>
+							<label className="label">
+								<span className="label-text-alt text-error">{form.formState.errors.gold?.message}</span>
+							</label>
+						</div>
+						<div className={twMerge("form-control w-full", "col-span-12 sm:col-span-2")}>
+							<label className="label">
+								<span className="label-text overflow-hidden text-ellipsis whitespace-nowrap">Downtime Days</span>
+							</label>
+							<input
+								type="number"
+								{...form.register("dtd", { value: log.dtd, disabled: saving, valueAsNumber: true })}
+								className="input-bordered input w-full focus:border-primary"
+							/>
+							<label className="label">
+								<span className="label-text-alt text-error">{form.formState.errors.dtd?.message}</span>
+							</label>
+						</div>
+					</div>
+					<div className="form-control col-span-12 w-full">
+						<label className="label">
+							<span className="label-text">Notes</span>
+						</label>
+						<AutoResizeTextArea
+							{...form.register("description", { value: log.description || "", disabled: saving })}
+							className="textarea-bordered textarea w-full focus:border-primary"
+						/>
+						<label className="label">
+							<span className="label-text-alt text-error">{form.formState.errors.description?.message}</span>
+							<span className="label-text-alt">Markdown Allowed</span>
+						</label>
+					</div>
+					<div className="col-span-12 flex flex-wrap gap-4">
+						<button type="button" className="btn-primary btn-sm btn min-w-fit flex-1 sm:flex-none" onClick={addMagicItem} disabled={saving}>
+							Add Magic Item
+						</button>
+						<button type="button" className="btn-primary btn-sm btn min-w-fit flex-1 sm:flex-none" onClick={addStoryAward} disabled={saving}>
+							Add Story Award
+						</button>
+					</div>
+					<div className="col-span-12 grid grid-cols-12 gap-4">
+						{magicItemsGained.map((item, index) => (
+							<div key={`magicItemsGained${index}`} className="card col-span-12 h-[338px] bg-base-300/70 sm:col-span-6">
+								<div className="card-body flex flex-col gap-4">
+									<h4 className="text-2xl">Add Magic Item</h4>
+									<div className="flex gap-4">
+										<div className="form-control flex-1">
+											<label className="label">
+												<span className="label-text">Name</span>
+											</label>
+											<input
+												type="text"
+												value={item.name}
+												onChange={e => {
+													setMagicItemsGained(magicItemsGained.map((item, i) => (i === index ? { ...item, name: e.target.value } : item)));
+												}}
+												disabled={saving}
+												className="input-bordered input w-full focus:border-primary"
+											/>
+											<label className="label">
+												<span className="label-text-alt text-error">{(form.formState.errors.magic_items_gained || [])[index]?.name?.message}</span>
+											</label>
+										</div>
+										<button type="button" className="btn-danger btn mt-9" onClick={() => removeMagicItem(index)} disabled={saving}>
+											<Icon path={mdiTrashCan} size={1} />
+										</button>
+									</div>
+									<div className="form-control w-full">
+										<label className="label">
+											<span className="label-text">Description</span>
+										</label>
+										<textarea
+											onChange={e => {
+												setMagicItemsGained(magicItemsGained.map((item, i) => (i === index ? { ...item, description: e.target.value } : item)));
+											}}
+											disabled={saving}
+											className="textarea-bordered textarea w-full focus:border-primary"
+											style={{ resize: "none" }}
+											value={item.description}
+										/>
+										<label className="label">
+											<span className="label-text-alt text-error"></span>
+											<span className="label-text-alt">Markdown Allowed</span>
+										</label>
+									</div>
+								</div>
+							</div>
+						))}
+						{storyAwardsGained.map((item, index) => (
+							<div key={`storyAwardsGained${index}`} className="card col-span-12 h-[370px] bg-base-300/70 sm:col-span-6">
+								<div className="card-body flex flex-col gap-4">
+									<h4 className="text-2xl">Add Story Award</h4>
+									<div className="flex gap-4">
+										<div className="form-control flex-1">
+											<label className="label">
+												<span className="label-text">Name</span>
+											</label>
+											<input
+												type="text"
+												value={item.name}
+												onChange={e => {
+													setStoryAwardsGained(storyAwardsGained.map((item, i) => (i === index ? { ...item, name: e.target.value } : item)));
+												}}
+												disabled={saving}
+												className="input-bordered input w-full focus:border-primary"
+											/>
+											<label className="label">
+												<span className="label-text-alt text-error">{(form.formState.errors.story_awards_gained || [])[index]?.name?.message}</span>
+											</label>
+										</div>
+										<button type="button" className="btn-danger btn mt-9" onClick={() => removeStoryAward(index)} disabled={saving}>
+											<Icon path={mdiTrashCan} size={1} />
+										</button>
+									</div>
+									<div className="form-control w-full">
+										<label className="label">
+											<span className="label-text">Description</span>
+										</label>
+										<textarea
+											onChange={e => {
+												setStoryAwardsGained(storyAwardsGained.map((item, i) => (i === index ? { ...item, description: e.target.value } : item)));
+											}}
+											disabled={saving}
+											className="textarea-bordered textarea w-full focus:border-primary"
+											value={item.description}
+										/>
+										<label className="label">
+											<span className="label-text-alt text-error"></span>
+											<span className="label-text-alt">Markdown Allowed</span>
+										</label>
+									</div>
 								</div>
 							</div>
 						))}

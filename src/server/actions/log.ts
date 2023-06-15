@@ -70,8 +70,8 @@ export async function deleteLog(logId: string, userId?: string) {
 	}
 }
 
-export type SaveCharacterLogFunction = typeof saveCharacterLog;
-export async function saveCharacterLog(characterId: string, logId: string, input: z.infer<typeof logSchema>, user?: User) {
+export type SaveCharacterLogFunction = typeof saveLog;
+export async function saveLog(characterId: string, logId: string, input: z.infer<typeof logSchema>, user?: User) {
 	try {
 		let dm: DungeonMaster | null = null;
 		if (!user) throw new Error("Not authenticated");
