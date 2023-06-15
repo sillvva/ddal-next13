@@ -56,6 +56,11 @@ export default async function Page({ params: { characterId } }: { params: { char
 		return result;
 	};
 
+	const actionRevalidate = async () => {
+		"use server";
+		revalidatePath(`/characters/${characterId}`);
+	};
+
 	return (
 		<>
 			<div className="flex gap-4 print:hidden">
@@ -163,6 +168,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 				userId={session?.user?.id || ""}
 				cookie={{ name: characterCookieSchema.name, value: characterCookie }}
 				deleteLog={actionDeleteLog}
+				revalidate={actionRevalidate}
 			/>
 		</>
 	);

@@ -26,7 +26,15 @@ const charactersSearch = new MiniSearch({
 	}
 });
 
-export function CharactersTable({ characters, cookie }: { characters: CharactersData; cookie: { name: string; value: CharactersCookie } }) {
+export function CharactersTable({
+	characters,
+	cookie,
+	revalidate
+}: {
+	characters: CharactersData;
+	cookie: { name: string; value: CharactersCookie };
+	revalidate: () => Promise<void>;
+}) {
 	const [search, setSearch] = useState("");
 	const [magicItems, setMagicItems] = useState(cookie.value.magicItems);
 	const router = useRouter();
@@ -85,7 +93,8 @@ export function CharactersTable({ characters, cookie }: { characters: Characters
 	const toggleMagicItems = useCallback(() => {
 		document.cookie = `${cookie.name}=${JSON.stringify({ ...cookie.value, magicItems: !magicItems })}; path=/`;
 		setMagicItems(!magicItems);
-	}, [magicItems, cookie]);
+		revalidate();
+	}, [magicItems, cookie, revalidate]);
 
 	return (
 		<>
@@ -194,12 +203,14 @@ export function CharacterLogTable({
 	character,
 	userId,
 	cookie,
-	deleteLog
+	deleteLog,
+	revalidate
 }: {
 	character: CharacterData;
 	userId: string;
 	cookie: { name: string; value: CharacterCookie };
 	deleteLog: DeleteLogFunction;
+	revalidate: () => Promise<void>;
 }) {
 	const myCharacter = character.userId === userId;
 	const [search, setSearch] = useState("");
@@ -243,7 +254,8 @@ export function CharacterLogTable({
 	const toggleDescriptions = useCallback(() => {
 		document.cookie = `${cookie.name}=${JSON.stringify({ ...cookie.value, descriptions: !descriptions })}; path=/;`;
 		setDescriptions(!descriptions);
-	}, [descriptions, cookie]);
+		revalidate();
+	}, [descriptions, cookie, revalidate]);
 
 	const results = useMemo(() => {
 		if (logs.length) {
