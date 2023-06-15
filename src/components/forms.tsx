@@ -1,8 +1,7 @@
 "use client";
 
 import { formatDate } from "$src/lib/misc";
-import { CharacterData, getCharacter } from "$src/server/db/characters";
-import { LogData } from "$src/server/db/log";
+import { getCharacter } from "$src/server/db/characters";
 import { logSchema, newCharacterSchema } from "$src/types/zod-schema";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -17,6 +16,8 @@ import AutoResizeTextArea from "./textarea";
 import type { DungeonMaster, LogType, MagicItem } from "@prisma/client";
 import type { SaveCharacterResult } from "$src/server/actions/character";
 import type { SaveLogResult } from "$src/server/actions/log";
+import type { CharacterData } from "$src/server/db/characters";
+import type { LogData } from "$src/server/db/log";
 
 export function EditCharacterForm({
 	id,
