@@ -14,9 +14,10 @@ import Icon from "@mdi/react";
 import AutoFillSelect from "./autofill";
 import AutoResizeTextArea from "./textarea";
 
-import type { DungeonMaster, Log, LogType, MagicItem } from "@prisma/client";
+import type { DungeonMaster, LogType, MagicItem } from "@prisma/client";
 import type { SaveCharacterFunction } from "$src/server/actions/character";
 import type { SaveCharacterLogFunction } from "$src/server/actions/log";
+
 export function EditCharacterForm({
 	id,
 	character,

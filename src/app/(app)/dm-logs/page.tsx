@@ -13,6 +13,7 @@ import { mdiDotsHorizontal, mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
+
 export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
