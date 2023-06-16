@@ -1,8 +1,10 @@
 "use client";
 
 import { formatDate } from "$src/lib/misc";
+import { SaveDMResult } from "$src/server/actions/dm";
 import { getCharacter } from "$src/server/db/characters";
-import { logSchema, newCharacterSchema } from "$src/types/zod-schema";
+import { UserDMWithLogs } from "$src/server/db/dms";
+import { dungeonMasterSchema, logSchema, newCharacterSchema } from "$src/types/zod-schema";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { twMerge } from "tailwind-merge";
@@ -18,7 +20,6 @@ import type { SaveCharacterResult } from "$src/server/actions/character";
 import type { SaveLogResult } from "$src/server/actions/log";
 import type { CharacterData } from "$src/server/db/characters";
 import type { LogData } from "$src/server/db/log";
-
 export function EditCharacterForm({
 	id,
 	character,
@@ -1242,6 +1243,74 @@ export function EditDMLogForm({
 				</div>
 			</form>
 		</>
+	);
+}
+
+export function EditDMForm({ dm, saveDM }: { dm: Exclude<UserDMWithLogs, null>; saveDM: (dm: z.infer<typeof dungeonMasterSchema>) => SaveDMResult }) {
+	const [isPending, startTransition] = useTransition();
+	const [saving, setSaving] = useState(false);
+
+	const form = useForm<z.infer<typeof dungeonMasterSchema>>({
+		resolver: zodResolver(dungeonMasterSchema)
+	});
+
+	const submitHandler = form.handleSubmit(data => {
+		setSaving(true);
+		startTransition(() => {
+			saveDM(data);
+		});
+	});
+
+	useEffect(() => {
+		if (!isPending && saving) {
+			setTimeout(() => setSaving(false), 2000);
+		}
+	}, [saving, isPending]);
+
+	return (
+		<form onSubmit={submitHandler}>
+			<input type="hidden" {...form.register("id", { value: dm.id })} />
+			<div className="flex flex-wrap">
+				<div className="basis-full px-2 sm:basis-1/2">
+					<div className="form-control w-full">
+						<label className="label">
+							<span className="label-text">
+								DM Name
+								<span className="text-error">*</span>
+							</span>
+						</label>
+						<input
+							type="text"
+							{...form.register("name", { required: true, value: dm.name, disabled: saving })}
+							className="input-bordered input w-full focus:border-primary"
+						/>
+						<label className="label">
+							<span className="label-text-alt text-error">{form.formState.errors.name?.message}</span>
+						</label>
+					</div>
+				</div>
+				<div className="basis-full px-2 sm:basis-1/2">
+					<div className="form-control w-full">
+						<label className="label">
+							<span className="label-text">DCI</span>
+						</label>
+						<input
+							type="text"
+							{...form.register("DCI", { value: dm.DCI || "", disabled: saving })}
+							className="input-bordered input w-full focus:border-primary"
+						/>
+						<label className="label">
+							<span className="label-text-alt text-error">{form.formState.errors.DCI?.message}</span>
+						</label>
+					</div>
+				</div>
+				<div className="m-4 basis-full text-center">
+					<button type="submit" className={twMerge("btn-primary btn", saving && "loading")} disabled={saving}>
+						Update
+					</button>
+				</div>
+			</div>
+		</form>
 	);
 }
 
