@@ -51,9 +51,7 @@ export const characterMeta = (character: CharacterData, path: string) => {
 				siteName: "Adventurers League Log",
 				images: [
 					{
-						url: character.image_url || "https://ddal.dekok.app/images/barovia-gate.jpg",
-						width: 800,
-						height: 600
+						url: character.image_url || "https://ddal.dekok.app/images/barovia-gate.jpg"
 					}
 				],
 				locale: "en_US",
