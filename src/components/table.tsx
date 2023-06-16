@@ -1,6 +1,7 @@
 "use client";
 
 import type { DeleteLogResult } from "$src/server/actions/log";
+import { setCookie } from "$src/lib/misc";
 import { DeleteDMResult } from "$src/server/actions/dm";
 import { UserDMsWithLogs } from "$src/server/db/dms";
 import { DMLogData } from "$src/server/db/log";
@@ -94,10 +95,14 @@ export function CharactersTable({
 	}, [indexed, search, characters]);
 
 	const toggleMagicItems = useCallback(() => {
-		document.cookie = `${cookie.name}=${JSON.stringify({ ...cookie.value, magicItems: !magicItems })}; path=/`;
+		setCookie(cookie.name, { ...cookie.value, magicItems: !magicItems });
 		setMagicItems(!magicItems);
 		revalidate();
 	}, [magicItems, cookie, revalidate]);
+
+	useEffect(() => {
+		setCookie(cookie.name, cookie.value);
+	}, [cookie]);
 
 	return (
 		<>
@@ -255,10 +260,14 @@ export function CharacterLogTable({
 	}, [indexed]);
 
 	const toggleDescriptions = useCallback(() => {
-		document.cookie = `${cookie.name}=${JSON.stringify({ ...cookie.value, descriptions: !descriptions })}; path=/;`;
+		setCookie(cookie.name, { ...cookie.value, descriptions: !descriptions });
 		setDescriptions(!descriptions);
 		revalidate();
 	}, [descriptions, cookie, revalidate]);
+
+	useEffect(() => {
+		setCookie(cookie.name, cookie.value);
+	}, [cookie]);
 
 	const results = useMemo(() => {
 		if (logs.length) {

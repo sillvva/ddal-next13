@@ -71,3 +71,10 @@ export const tooltipClasses = (text?: string | null, align = "center") => {
 export function canUseDOM() {
 	return !!(typeof window !== "undefined" && window.document && window.document.createElement);
 }
+
+export function setCookie(name: string, value: object): void {
+	if (!canUseDOM()) return;
+	const expires = new Date();
+	expires.setFullYear(expires.getFullYear() + 1);
+	document.cookie = `${name}=${JSON.stringify(value)}; expires=${expires.toUTCString()}; path=/;`;
+}

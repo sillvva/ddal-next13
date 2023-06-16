@@ -19,7 +19,7 @@ import Icon from "@mdi/react";
 const characterCookieSchema = {
 	name: "character",
 	defaults: {
-		descriptions: false
+		descriptions: true
 	}
 };
 
