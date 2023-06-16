@@ -54,7 +54,7 @@ export default async function Page({ params: { dmId } }: { params: { dmId: strin
 						</li>
 						<li>
 							<Link href="/dms" className="text-secondary">
-								DM Logs
+								DMs
 							</Link>
 						</li>
 						<li className="dark:drop-shadow-md">Edit {dm.name}</li>
