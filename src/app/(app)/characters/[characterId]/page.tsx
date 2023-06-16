@@ -182,7 +182,7 @@ export async function generateMetadata({ params: { characterId } }: { params: { 
 	const fullUrl = headersList.get("referer") || "";
 	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
 
-	// const character = await getCharacter(characterId);
+	const character = await getCharacter(characterId);
 
 	if (character) return characterMeta(character, path);
 	else return appMeta(path, "Character Not Found");
