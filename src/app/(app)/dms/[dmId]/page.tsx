@@ -10,12 +10,12 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Fragment } from "react";
 import { z } from "zod";
 import { mdiHome, mdiPencil } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
+
 export default async function Page({ params: { dmId } }: { params: { dmId: string } }) {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
@@ -89,24 +89,22 @@ export default async function Page({ params: { dmId } }: { params: { dmId: strin
 									dm.logs
 										.sort((a, b) => (a.date > b.date ? 1 : -1))
 										.map(log => (
-											<Fragment key={log.id}>
-												<tr>
-													<td>{log.date.toLocaleString()}</td>
-													<td>{log.name}</td>
-													<td>
-														<Link href={`/characters/${log.character?.id}`} className="text-secondary">
-															{log.character?.name}
+											<tr key={log.id}>
+												<td>{log.date.toLocaleString()}</td>
+												<td>{log.name}</td>
+												<td>
+													<Link href={`/characters/${log.character?.id}`} className="text-secondary">
+														{log.character?.name}
+													</Link>
+												</td>
+												<td className="w-8 print:hidden">
+													<div className="flex flex-row justify-center gap-2">
+														<Link href={`/characters/${log.character?.id}/log/${log.id}`} className="btn-primary btn-sm btn">
+															<Icon path={mdiPencil} size={0.8} />
 														</Link>
-													</td>
-													<td className="w-8 print:hidden">
-														<div className="flex flex-row justify-center gap-2">
-															<Link href={`/characters/${log.character?.id}/log/${log.id}`} className="btn-primary btn-sm btn">
-																<Icon path={mdiPencil} size={0.8} />
-															</Link>
-														</div>
-													</td>
-												</tr>
-											</Fragment>
+													</div>
+												</td>
+											</tr>
 										))
 								)}
 							</tbody>

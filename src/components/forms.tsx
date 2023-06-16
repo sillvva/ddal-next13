@@ -1,9 +1,7 @@
 "use client";
 
 import { formatDate } from "$src/lib/misc";
-import { SaveDMResult } from "$src/server/actions/dm";
 import { getCharacter } from "$src/server/db/characters";
-import { UserDMWithLogs } from "$src/server/db/dms";
 import { dungeonMasterSchema, logSchema, newCharacterSchema } from "$src/types/zod-schema";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -18,8 +16,11 @@ import AutoResizeTextArea from "./textarea";
 import type { DungeonMaster, LogType, MagicItem } from "@prisma/client";
 import type { SaveCharacterResult } from "$src/server/actions/character";
 import type { SaveLogResult } from "$src/server/actions/log";
+import type { SaveDMResult } from "$src/server/actions/dm";
 import type { CharacterData } from "$src/server/db/characters";
 import type { LogData } from "$src/server/db/log";
+import type { UserDMWithLogs } from "$src/server/db/dms";
+
 export function EditCharacterForm({
 	id,
 	character,
@@ -808,7 +809,7 @@ export function EditDMLogForm({
 		const activeName = document.activeElement?.getAttribute("name");
 		if (activeName === "characterName" && !form.getValues("characterId")) return;
 
-		if (form.getValues("characterName") && !(characters || []).map(c => c.id).find(c => form.getValues("characterId"))) {
+		if (form.getValues("characterId") && !(characters || []).find(c => c.id === form.getValues("characterId"))) {
 			form.setError("characterId", { type: "manual", message: "Character not found" });
 			return;
 		}

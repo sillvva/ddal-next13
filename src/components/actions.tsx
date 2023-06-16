@@ -1,9 +1,10 @@
 "use client";
-import { DeleteDMResult } from "$src/server/actions/dm";
 import { useEffect, useState, useTransition } from "react";
 import { PageLoader } from "./portals";
 
 import type { DeleteCharacterResult } from "$src/server/actions/character";
+import type { DeleteDMResult } from "$src/server/actions/dm";
+
 export function DeleteCharacter({ characterId, deleteCharacter }: { characterId: string; deleteCharacter: (characterId: string) => DeleteCharacterResult }) {
 	const [isPending, startTransition] = useTransition();
 	const [deleting, setDeleting] = useState(false);

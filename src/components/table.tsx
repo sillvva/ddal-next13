@@ -18,6 +18,7 @@ import { SearchResults } from "./search";
 import type { CharacterData, CharactersData } from "$src/server/db/characters";
 import type { CharactersCookie } from "$src/app/(app)/characters/page";
 import type { CharacterCookie } from "$src/app/(app)/characters/[characterId]/page";
+
 let stopWords = new Set(["and", "or", "to", "in", "a", "the"]);
 const charactersSearch = new MiniSearch({
 	fields: ["characterName", "campaign", "race", "class", "magicItems", "tier", "level"],
