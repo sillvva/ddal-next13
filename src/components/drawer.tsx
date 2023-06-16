@@ -25,7 +25,7 @@ export const Drawer = () => {
 			<button className="flex py-3 pr-4 print:hidden md:hidden" onClick={() => toggleDrawer(true)}>
 				<Icon path={mdiMenu} size={1} />
 			</button>
-			<div className={twMerge("fixed -left-72 bottom-0 top-0 z-50 w-72 bg-neutral px-4 py-4 transition-all", drawer && "left-0")}>
+			<div className={twMerge("fixed -left-72 bottom-0 top-0 z-50 w-72 bg-base-100 px-4 py-4 transition-all", drawer && "left-0")}>
 				<ul className="menu w-full" onClick={() => toggleDrawer(false)}>
 					<li>
 						<Link href="/characters">Character Logs</Link>

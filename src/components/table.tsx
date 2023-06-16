@@ -417,7 +417,7 @@ const CharacterLogRow = ({
 							<>
 								{log.experience > 0 && (
 									<p>
-										<span className="font-semibold">Experience:</span> {log.experience}
+										<span className="font-semibold">Experience:</span>&nbsp;{log.experience}
 									</p>
 								)}
 								{log.acp > 0 && (
@@ -426,13 +426,13 @@ const CharacterLogRow = ({
 									</p>
 								)}
 								<p>
-									<span className="font-semibold">Levels:</span> {log.level_gained} {`(${log.total_level})`}
+									<span className="font-semibold">Levels:</span>&nbsp;{log.level_gained}&nbsp;({log.total_level})
 								</p>
 							</>
 						)}
 						{log.dtd !== 0 && (
 							<p>
-								<span className="font-semibold">Downtime Days:</span> {log.dtd}
+								<span className="font-semibold">Downtime&nbsp;Days:</span>&nbsp;{log.dtd}
 							</p>
 						)}
 						{log.tcp !== 0 && (
@@ -461,7 +461,7 @@ const CharacterLogRow = ({
 					)}>
 					{log.experience > 0 && (
 						<p>
-							<span className="font-semibold">Experience:</span> {log.experience}
+							<span className="font-semibold">Experience:</span>&nbsp;{log.experience}
 						</p>
 					)}
 					{log.acp > 0 && (
@@ -471,12 +471,12 @@ const CharacterLogRow = ({
 					)}
 					{log.level_gained > 0 && (
 						<p>
-							<span className="font-semibold">Levels:</span> {log.level_gained} {`(${log.total_level})`}
+							<span className="font-semibold">Levels:</span>&nbsp;{log.level_gained}&nbsp;({log.total_level})
 						</p>
 					)}
 					{log.dtd !== 0 && (
 						<p>
-							<span className="text-sm font-semibold">Downtime Days:</span> {log.dtd}
+							<span className="text-sm font-semibold">Downtime&nbsp;Days:</span>&nbsp;{log.dtd}
 						</p>
 					)}
 				</td>
