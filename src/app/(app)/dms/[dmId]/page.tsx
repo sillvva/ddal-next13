@@ -16,11 +16,13 @@ import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
 
+let dm: Awaited<ReturnType<typeof getUserDMWithLogs>>;
+
 export default async function Page({ params: { dmId } }: { params: { dmId: string } }) {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
 
-	const dm = await getUserDMWithLogs(session.user.id, dmId);
+	dm = await getUserDMWithLogs(session.user.id, dmId);
 	if (!dm) throw redirect("/dms");
 
 	const actionSaveDM = async (dm: z.infer<typeof dungeonMasterSchema>) => {
@@ -36,7 +38,7 @@ export default async function Page({ params: { dmId } }: { params: { dmId: strin
 
 	const actionDeleteDM = async (dmId: string) => {
 		"use server";
-		const result = await deleteDM(dm.id, session.user?.id || "");
+		const result = await deleteDM(dmId, session.user?.id || "");
 		if (result.id) {
 			revalidatePath("/dms");
 			redirect(`/dms`);
@@ -123,7 +125,7 @@ export async function generateMetadata({ params: { dmId } }: { params: { dmId: s
 	const fullUrl = headersList.get("referer") || "";
 	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
 
-	const dm = await getUserDMWithLogs(session?.user?.id || "", dmId);
+	// const dm = await getUserDMWithLogs(session?.user?.id || "", dmId);
 
 	return appMeta(path, `Edit ${dm?.name}`);
 }

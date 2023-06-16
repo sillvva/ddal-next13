@@ -24,12 +24,13 @@ const characterCookieSchema = {
 };
 
 export type CharacterCookie = (typeof characterCookieSchema)["defaults"];
+let character: Awaited<ReturnType<typeof getCharacter>>;
 
 export default async function Page({ params: { characterId } }: { params: { characterId: string } }) {
 	if (characterId === "new") throw redirect("/characters/new/edit");
 
 	const session = await getServerSession(authOptions);
-	const character = await getCharacter(characterId);
+	character = await getCharacter(characterId);
 	const myCharacter = character?.userId === session?.user?.id;
 
 	if (!character) throw redirect(session?.user ? "/characters" : "/");
@@ -181,7 +182,7 @@ export async function generateMetadata({ params: { characterId } }: { params: { 
 	const fullUrl = headersList.get("referer") || "";
 	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
 
-	const character = await getCharacter(characterId);
+	// const character = await getCharacter(characterId);
 
 	if (character) return characterMeta(character, path);
 	else return appMeta(path, "Character Not Found");

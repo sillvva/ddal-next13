@@ -15,6 +15,8 @@ import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
 
+let character: Awaited<ReturnType<typeof getCharacter>>;
+
 export default async function Page({ params: { characterId } }: { params: { characterId: string } }) {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
@@ -29,7 +31,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 	};
 
 	if (characterId !== "new") {
-		const character = await getCharacter(characterId);
+		character = await getCharacter(characterId);
 		if (character?.userId !== session?.user?.id) throw redirect("/characters");
 
 		if (character) {
@@ -92,7 +94,7 @@ export async function generateMetadata({ params: { characterId } }: { params: { 
 
 	if (characterId === "new") return appMeta(path, "New Character");
 
-	const character = await getCharacter(characterId);
+	// const character = await getCharacter(characterId);
 	if (character) return appMeta(path, `Edit ${character.name}`);
 	else return appMeta(path, "Character Not Found");
 }
