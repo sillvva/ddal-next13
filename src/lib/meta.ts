@@ -9,9 +9,7 @@ export const appMeta = (path: string, title: string) => {
 				siteName: "Adventurers League Log",
 				images: [
 					{
-						url: "/images/barovia-gate.jpg",
-						width: 800,
-						height: 600
+						url: "/images/barovia-gate.jpg"
 					}
 				],
 				locale: "en_US",

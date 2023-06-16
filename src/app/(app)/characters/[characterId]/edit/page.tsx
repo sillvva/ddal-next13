@@ -94,7 +94,7 @@ export async function generateMetadata({ params: { characterId } }: { params: { 
 
 	if (characterId === "new") return appMeta(path, "New Character");
 
-	// const character = await getCharacter(characterId);
+	if (!character) character = await getCharacter(characterId);
 	if (character) return appMeta(path, `Edit ${character.name}`);
 	else return appMeta(path, "Character Not Found");
 }
