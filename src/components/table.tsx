@@ -1,7 +1,7 @@
 "use client";
 
 import type { DeleteLogResult } from "$src/server/actions/log";
-import { setCookie } from "$src/lib/misc";
+import { setCookie } from "$src/lib/utils";
 import { DeleteDMResult } from "$src/server/actions/dm";
 import { UserDMsWithLogs } from "$src/server/db/dms";
 import { DMLogData } from "$src/server/db/log";

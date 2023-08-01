@@ -1,4 +1,78 @@
-import type { DungeonMaster, Log, MagicItem, StoryAward } from "@prisma/client";
+import type { DungeonMaster, Log, LogType, MagicItem, StoryAward } from "@prisma/client";
+import { sorter } from "$src/lib/utils";
+import { getCharacter } from "$src/server/db/characters";
+
+export const getMagicItems = (
+	character: Exclude<Awaited<ReturnType<typeof getCharacter>>, null>,
+	options?: {
+		lastLogId?: string;
+		lastLogDate?: string;
+		excludeDropped?: boolean;
+	}
+) => {
+	const { lastLogId = "", lastLogDate = "", excludeDropped = false } = options || {};
+	const magicItems: MagicItem[] = [];
+	let lastLog = false;
+	character.logs
+		.sort((a, b) => sorter(a.date, b.date))
+		.forEach(log => {
+			if (lastLog) return;
+			if (lastLogId && log.id === lastLogId) {
+				lastLog = true;
+				return;
+			}
+			if (lastLogDate && log.date >= new Date(lastLogDate)) {
+				lastLog = true;
+				return;
+			}
+			log.magic_items_gained.forEach(item => {
+				magicItems.push(item);
+			});
+			log.magic_items_lost.forEach(item => {
+				magicItems.splice(
+					magicItems.findIndex(i => i.id === item.id),
+					1
+				);
+			});
+		});
+	return magicItems.filter(item => !excludeDropped || !item.logLostId);
+};
+
+export const getStoryAwards = (
+	character: Exclude<Awaited<ReturnType<typeof getCharacter>>, null>,
+	options?: {
+		lastLogId?: string;
+		lastLogDate?: string;
+		excludeDropped?: boolean;
+	}
+) => {
+	const { lastLogId = "", lastLogDate = "", excludeDropped = false } = options || {};
+	const storyAwards: StoryAward[] = [];
+	let lastLog = false;
+	character.logs
+		.sort((a, b) => sorter(a.date, b.date))
+		.forEach(log => {
+			if (lastLog) return;
+			if (log.id === lastLogId) {
+				lastLog = true;
+				return;
+			}
+			if (lastLogDate && log.date >= new Date(lastLogDate)) {
+				lastLog = true;
+				return;
+			}
+			log.story_awards_gained.forEach(item => {
+				storyAwards.push(item);
+			});
+			log.story_awards_lost.forEach(item => {
+				storyAwards.splice(
+					storyAwards.findIndex(i => i.id === item.id),
+					1
+				);
+			});
+		});
+	return storyAwards.filter(item => !excludeDropped || !item.logLostId);
+};
 
 export function getLevels(logs: Log[], base: { level?: number; experience?: number; acp?: number } = { level: 0, experience: 0, acp: 0 }) {
 	if (!logs) logs = [];
@@ -112,7 +186,36 @@ export const getLogsSummary = (
 		magic_items,
 		story_awards,
 		log_levels: levels.log_levels,
-		tier: total_level >= 17 ? 4 : total_level >= 11 ? 3 : total_level >= 5 ? 2 : 1,
+		tier: Math.floor((total_level + 1) / 6) + 1,
 		logs: logs.map(log => ({ ...log, saving: false }))
 	};
 };
+
+export const defaultLog = (characterId = "") => ({
+	characterId: characterId,
+	id: "",
+	name: "",
+	description: "",
+	date: new Date(),
+	type: "game" as LogType,
+	created_at: new Date(),
+	experience: 0,
+	acp: 0,
+	tcp: 0,
+	level: 0,
+	gold: 0,
+	dtd: 0,
+	dungeonMasterId: "",
+	dm: {
+		id: "",
+		name: "",
+		DCI: null,
+		uid: ""
+	},
+	applied_date: null,
+	is_dm_log: !characterId,
+	magic_items_gained: [],
+	magic_items_lost: [],
+	story_awards_gained: [],
+	story_awards_lost: []
+});

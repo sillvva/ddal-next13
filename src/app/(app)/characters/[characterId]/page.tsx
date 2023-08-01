@@ -3,8 +3,8 @@ import { Items } from "$src/components/items";
 import { CharacterLogTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
 import { appMeta, characterMeta } from "$src/lib/meta";
-import { slugify } from "$src/lib/misc";
 import { getCookie } from "$src/lib/store";
+import { slugify } from "$src/lib/utils";
 import { deleteCharacter } from "$src/server/actions/character";
 import { deleteLog } from "$src/server/actions/log";
 import { getCharacterCache } from "$src/server/db/characters";
@@ -33,7 +33,6 @@ export default async function Page({ params: { characterId } }: { params: { char
 
 	const character = await getCharacterCache(characterId);
 	if (!character) throw redirect(session?.user ? "/characters" : "/");
-
 	const myCharacter = character?.userId === session?.user?.id;
 
 	const characterCookie = getCookie(characterCookieSchema);

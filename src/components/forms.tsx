@@ -1,6 +1,6 @@
 "use client";
 
-import { formatDate } from "$src/lib/misc";
+import { formatDate } from "$src/lib/utils";
 import { getCharacter } from "$src/server/db/characters";
 import { dungeonMasterSchema, logSchema, newCharacterSchema } from "$src/types/zod-schema";
 import { useEffect, useMemo, useState, useTransition } from "react";
