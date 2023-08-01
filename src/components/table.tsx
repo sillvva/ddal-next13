@@ -212,7 +212,7 @@ export function CharactersTable({
 										<SearchResults text={character.campaign} search={search} />
 									</p>
 								</div>
-								{(character.match.includes("magicItems") || magicItems) && !!character.magic_items.length && (
+								{(character.match.includes("magicItems") || magicItems) && character.magic_items.length > 0 && (
 									<div className="mb-2">
 										<p className="font-semibold">Magic Items:</p>
 										<SearchResults text={character.magic_items.map(item => item.name)} search={search} />
@@ -231,7 +231,7 @@ export function CharactersTable({
 
 			{[1, 2, 3, 4].map(
 				tier =>
-					results.filter(c => c.tier == tier).length && (
+					results.filter(c => c.tier == tier).length > 0 && (
 						<Fragment key={tier}>
 							<h1 className={twMerge("text-2xl font-bold dark:text-white", display == "list" && "hidden", display == "grid" && "hidden xs:block")}>
 								Tier {tier}
@@ -250,7 +250,7 @@ export function CharactersTable({
 											result => result.id == character.id && result.terms.find(term => result.match[term].includes("magicItems"))
 										);
 										return (
-											<a href={`/characters/${character.id}`} className="img-grow card card-compact bg-base-100 shadow-xl" key={character.id}>
+											<a href={`/characters/${character.id}`} className="img-grow card-compact card bg-base-100 shadow-xl" key={character.id}>
 												<figure className="relative aspect-square overflow-hidden">
 													{character.image_url ? (
 														<LazyImage
@@ -262,7 +262,7 @@ export function CharactersTable({
 													) : (
 														<Icon path={mdiAccount} className="h-full w-full object-cover object-top" />
 													)}
-													{search.length >= 1 && indexed.length && miMatches && (
+													{search.length >= 1 && indexed.length > 0 && miMatches && (
 														<div className="absolute inset-0 flex items-center bg-black/50 p-2 text-center text-xs text-white">
 															<div className="flex-1">
 																<SearchResults text={character.magic_items.map(item => item.name)} search={search} filtered />
@@ -390,7 +390,7 @@ export function CharacterLogTable({
 							New Log
 						</a>
 					)}
-					{logs.length && (
+					{logs.length > 0 && (
 						<input
 							type="text"
 							placeholder="Search"
@@ -415,7 +415,7 @@ export function CharacterLogTable({
 						</>
 					)}
 				</div>
-				{logs.length && (
+				{logs.length > 0 && (
 					<>
 						<div className="hidden flex-1 sm:block" />
 						<button
