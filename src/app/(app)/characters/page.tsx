@@ -2,7 +2,7 @@ import { CharactersTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { getCookie } from "$src/lib/store";
-import { CharactersData, getCharacterCache, getCharactersCache } from "$src/server/db/characters";
+import { getCharacterCache, getCharactersCache } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
 import { headers } from "next/headers";
 import Link from "next/link";
@@ -11,6 +11,8 @@ import { mdiDotsHorizontal, mdiHome, mdiPlus } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
+
+export type CharactersCookie = (typeof charactersCookieSchema)["defaults"];
 const charactersCookieSchema = {
 	name: "characters",
 	defaults: {
@@ -18,15 +20,13 @@ const charactersCookieSchema = {
 	}
 };
 
-export type CharactersCookie = (typeof charactersCookieSchema)["defaults"];
-
 export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
 
 	const charactersData = await getCharactersCache(session.user.id);
 	const characterData = await Promise.all(charactersData.map(character => getCharacterCache(character.id)));
-	const characters = characterData.filter(Boolean) as CharactersData;
+	const characters = characterData.filter(Boolean);
 
 	const characterCookie = getCookie(charactersCookieSchema);
 

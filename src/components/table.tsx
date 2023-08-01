@@ -17,7 +17,7 @@ import { Items } from "./items";
 import { Markdown } from "./markdown";
 import { SearchResults } from "./search";
 
-import type { CharacterData, CharactersData } from "$src/server/db/characters";
+import type { CharacterData } from "$src/server/db/characters";
 import type { CharactersCookie } from "$src/app/(app)/characters/page";
 import type { CharacterCookie } from "$src/app/(app)/characters/[characterId]/page";
 let stopWords = new Set(["and", "or", "to", "in", "a", "the"]);
@@ -30,7 +30,7 @@ const charactersSearch = new MiniSearch({
 	}
 });
 
-export function CharactersTable({ characters, cookie }: { characters: CharactersData; cookie: { name: string; value: CharactersCookie } }) {
+export function CharactersTable({ characters, cookie }: { characters: CharacterData[]; cookie: { name: string; value: CharactersCookie } }) {
 	const [search, setSearch] = useState("");
 	const [magicItems, setMagicItems] = useState(cookie.value.magicItems);
 	const router = useRouter();

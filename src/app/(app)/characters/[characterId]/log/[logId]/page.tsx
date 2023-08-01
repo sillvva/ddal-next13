@@ -2,8 +2,8 @@ import { EditCharacterLogForm } from "$src/components/forms";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { saveLog } from "$src/server/actions/log";
-import { getCharacter } from "$src/server/db/characters";
-import { getUserDMs } from "$src/server/db/dms";
+import { getCharacterCache } from "$src/server/db/characters";
+import { getUserDMsCache } from "$src/server/db/dms";
 import { logSchema } from "$src/types/zod-schema";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
@@ -20,13 +20,13 @@ export default async function Page({ params: { characterId, logId } }: { params:
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
 
-	const character = await getCharacter(characterId);
+	const character = await getCharacterCache(characterId);
 	if (character?.userId !== session?.user?.id) throw redirect("/characters");
-
-	const dms = await getUserDMs(session.user.id);
 
 	let log = character.logs.find(log => log.id === logId);
 	if (logId !== "new" && !log) throw redirect(`/characters/${characterId}`);
+
+	const dms = await getUserDMsCache(session.user.id);
 
 	const actionSaveLog = async (data: z.infer<typeof logSchema>) => {
 		"use server";

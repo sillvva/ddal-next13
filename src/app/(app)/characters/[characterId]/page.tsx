@@ -18,14 +18,13 @@ import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
 
+export type CharacterCookie = (typeof characterCookieSchema)["defaults"];
 const characterCookieSchema = {
 	name: "character",
 	defaults: {
 		descriptions: true
 	}
 };
-
-export type CharacterCookie = (typeof characterCookieSchema)["defaults"];
 
 export default async function Page({ params: { characterId } }: { params: { characterId: string } }) {
 	if (characterId === "new") throw redirect("/characters/new/edit");

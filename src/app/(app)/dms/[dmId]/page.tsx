@@ -3,10 +3,10 @@ import { EditDMForm } from "$src/components/forms";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { deleteDM, saveDM } from "$src/server/actions/dm";
-import { getUserDMWithLogs } from "$src/server/db/dms";
+import { getUserDMWithLogs, getUserDMWithLogsCache } from "$src/server/db/dms";
 import { dungeonMasterSchema } from "$src/types/zod-schema";
 import { getServerSession } from "next-auth";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -22,15 +22,16 @@ export default async function Page({ params: { dmId } }: { params: { dmId: strin
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
 
-	dm = await getUserDMWithLogs(session.user.id, dmId);
+	dm = await getUserDMWithLogsCache(session.user.id, dmId);
 	if (!dm) throw redirect("/dms");
 
 	const actionSaveDM = async (dm: z.infer<typeof dungeonMasterSchema>) => {
 		"use server";
 		const result = await saveDM(dm.id, session.user?.id || "", dm);
 		if (result.id) {
-			revalidatePath(`/dms/${result.id}`);
-			revalidatePath("/dms");
+			revalidateTag(`dm-wlogs-${result.id}`);
+			revalidateTag(`dms-wlogs-${session.user?.id}`);
+			revalidateTag(`dms-${session.user?.id}`);
 			redirect(`/dms`);
 		}
 		return result;
@@ -40,7 +41,8 @@ export default async function Page({ params: { dmId } }: { params: { dmId: strin
 		"use server";
 		const result = await deleteDM(dmId, session.user?.id || "");
 		if (result.id) {
-			revalidatePath("/dms");
+			revalidateTag(`dms-wlogs-${session.user?.id}`);
+			revalidateTag(`dms-${session.user?.id}`);
 			redirect(`/dms`);
 		}
 		return result;
