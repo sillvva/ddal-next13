@@ -250,7 +250,7 @@ export function CharactersTable({
 											result => result.id == character.id && result.terms.find(term => result.match[term].includes("magicItems"))
 										);
 										return (
-											<a href={`/characters/${character.id}`} className="img-grow card-compact card bg-base-100 shadow-xl" key={character.id}>
+											<a href={`/characters/${character.id}`} className="img-grow card card-compact bg-base-100 shadow-xl" key={character.id}>
 												<figure className="relative aspect-square overflow-hidden">
 													{character.image_url ? (
 														<LazyImage
