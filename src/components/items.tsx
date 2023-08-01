@@ -1,54 +1,121 @@
 "use client";
 
 import { Markdown } from "$src/components/markdown";
-import { useState } from "react";
+import { sorter } from "$src/lib/utils";
+import { useMemo, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { mdiChevronDown, mdiChevronUp } from "@mdi/js";
 import Icon from "@mdi/react";
 import { SearchResults } from "./search";
 
 import type { MagicItem, StoryAward } from "@prisma/client";
-
 export function Items({
 	items,
-	title,
-	formatting,
-	search,
-	collapsible
+	title = "",
+	formatting = false,
+	search = "",
+	collapsible = false,
+	sort = false
 }: {
 	title?: string;
 	items: (MagicItem | StoryAward)[];
 	formatting?: boolean;
 	search?: string;
 	collapsible?: boolean;
+	sort?: boolean;
 }) {
 	const [modal, setModal] = useState<{ name: string; description: string; date?: Date } | null>(null);
 	const [collapsed, setCollapsed] = useState(collapsible);
+
+	const itemsMap = new Map<string, number>();
+
+	const sorterName = (name: string) =>
+		sort
+			? name
+					.replace(/^\d+x? ?/, "")
+					.replace("Spell Scroll", "Scroll")
+					.replace(/^(\w+)s/, "$1")
+					.replace(/^(A|An|The) /, "")
+			: name;
+	const isConsumable = (name: string) => name.trim().match(/^(\d+x? )?((Potion|Scroll|Spell Scroll|Charm|Elixir)s? of)/);
+	const itemQty = (item: { name: string }) => parseInt(item.name.match(/^(\d+)x? /)?.[1] || "1");
+	const clearQty = (name: string) => name.replace(/^\d+x? ?/, "");
+
+	const clonedItems = useMemo(() => structuredClone(items), [items]);
+
+	const consolidatedItems = useMemo(
+		() =>
+			clonedItems
+				.map((item, index) => {
+					const name = clearQty(item.name);
+					const desc = item.description?.trim();
+					const key = `${name}_${desc}`;
+					const qty = itemQty(item);
+					const cons = isConsumable(sorterName(name));
+
+					return {
+						name,
+						desc,
+						qty,
+						index,
+						cons,
+						key
+					};
+				})
+				.reduce((acc, { name, qty, key, index, cons }) => {
+					const existingIndex = itemsMap.get(key);
+					if (existingIndex && existingIndex >= 0) {
+						const existingQty = itemQty(acc[existingIndex]);
+
+						const newQty = existingQty + qty;
+						let newName = name;
+						if (cons) newName = newName.replace(/^(\w+)s/, "$1");
+
+						if (newQty > 1) {
+							if (cons) newName = newName.replace(/^(\w+)( .+)$/, "$1s$2");
+							acc[existingIndex].name = `${newQty} ${newName}`;
+						} else {
+							acc[existingIndex].name = newName;
+						}
+					} else {
+						acc.push(clonedItems[index]);
+						itemsMap.set(key, acc.length - 1);
+					}
+
+					return acc;
+				}, [] as typeof items),
+		[clonedItems]
+	);
+
+	const sortedItems = useMemo(
+		() => (sort ? consolidatedItems.sort((a, b) => sorter(sorterName(a.name), sorterName(b.name))) : consolidatedItems),
+		[consolidatedItems]
+	);
 
 	return (
 		<>
 			<div className={twMerge("flex-1 flex-col", collapsible && !items.length ? "hidden md:flex" : "flex")}>
 				{title && (
-					<h4 className="flex font-semibold" onClick={collapsible ? () => setCollapsed(!collapsed) : () => {}}>
-						<span className="flex-1">{title}</span>
-						{collapsible && <Icon path={collapsed ? mdiChevronDown : mdiChevronUp} className="ml-2 inline w-4 justify-self-end print:hidden md:hidden" />}
-					</h4>
+					<div role="presentation" onClick={collapsible ? () => setCollapsed(!collapsed) : () => {}} onKeyPress={() => {}}>
+						<h4 className="flex text-left font-semibold">
+							<span className="flex-1">{title}</span>
+							{collapsible && <Icon path={collapsed ? mdiChevronUp : mdiChevronDown} className="ml-2 inline w-4 justify-self-end print:hidden md:hidden" />}
+						</h4>
+					</div>
 				)}
-				<p className={twMerge("divide-x whitespace-pre-wrap text-sm print:text-xs", collapsed ? "hidden print:block md:block" : "")}>
+				<p className={twMerge("divide-x divide-black/50 text-sm dark:divide-white/50 print:text-xs", collapsed ? "hidden print:inline md:inline" : "")}>
 					{items.length
-						? items.map(mi => (
+						? sortedItems.map(mi => (
 								<span
-									key={mi.id}
-									className="whitespace-pre-wrap px-2 first:pl-0"
-									onClick={() => mi.description && setModal({ name: mi.name, description: mi.description })}>
-									{formatting && !mi.name.match(/^(\d+x? )?((Potion|Scroll|Spell Scroll|Charm|Elixir)s? of)/) ? (
-										<strong className="text-secondary-content/70 print:text-neutral-content">
-											<SearchResults text={mi.name} search={search || ""} />
-										</strong>
-									) : (
-										<SearchResults text={mi.name} search={search || ""} />
-									)}
-									{mi.description && "*"}
+									role={mi.description ? "button" : "presentation"}
+									className={twMerge("inline px-2 first:pl-0", mi.description && "text-secondary", formatting && isConsumable(mi.name) && "italic")}
+									onClick={() => {
+										if (mi.description) {
+											setModal({ name: mi.name, description: mi.description });
+										}
+									}}
+									onKeyPress={() => null}>
+									<SearchResults text={mi.name} search={search || ""} />
 								</span>
 						  ))
 						: "None"}

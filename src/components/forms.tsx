@@ -13,13 +13,14 @@ import AutoFillSelect from "./autofill";
 import AutoResizeTextArea from "./textarea";
 
 import type { DungeonMasterSchema, LogSchema, NewCharacterSchema } from "$src/types/schemas";
-import type { DungeonMaster, LogType, MagicItem } from "@prisma/client";
+import type { DungeonMaster, LogType } from "@prisma/client";
 import type { SaveCharacterResult } from "$src/server/actions/character";
 import type { SaveLogResult } from "$src/server/actions/log";
 import type { SaveDMResult } from "$src/server/actions/dm";
 import type { CharacterData, CharactersData } from "$src/server/db/characters";
 import type { LogData } from "$src/server/db/log";
 import type { UserDMWithLogs } from "$src/server/db/dms";
+
 export function EditCharacterForm({
 	id,
 	character,

@@ -7,8 +7,7 @@ import { UserDMsWithLogs } from "$src/server/db/dms";
 import { DMLogData } from "$src/server/db/log";
 import MiniSearch from "minisearch";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { CSSProperties, useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { twMerge } from "tailwind-merge";
 import { mdiAccount, mdiEye, mdiEyeOff, mdiFormatListText, mdiPencil, mdiPlus, mdiTrashCan, mdiViewGrid } from "@mdi/js";
 import Icon from "@mdi/react";
@@ -42,7 +41,6 @@ export function CharactersTable({
 	const [search, setSearch] = useState("");
 	const [magicItems, setMagicItems] = useState(cookie.value.magicItems);
 	const [display, setDisplay] = useState<"grid" | "list">("list");
-	const router = useRouter();
 
 	const indexed = useMemo(
 		() =>
@@ -252,7 +250,7 @@ export function CharactersTable({
 											result => result.id == character.id && result.terms.find(term => result.match[term].includes("magicItems"))
 										);
 										return (
-											<a href={`/characters/${character.id}`} className="img-grow card card-compact bg-base-100 shadow-xl">
+											<a href={`/characters/${character.id}`} className="img-grow card-compact card bg-base-100 shadow-xl">
 												<figure className="relative aspect-square overflow-hidden">
 													{character.image_url ? (
 														<LazyImage
@@ -385,72 +383,92 @@ export function CharacterLogTable({
 
 	return (
 		<>
-			<div className="mt-4 flex">
-				<div className="flex gap-4 print:hidden">
+			<div className="mt-4 flex flex-wrap gap-2">
+				<div className="flex w-full gap-2 print:hidden sm:max-w-md">
 					{myCharacter && (
-						<Link href={`/characters/${character.id}/log/new`} className="btn-primary btn-sm btn px-2 sm:px-3">
-							<span className="hidden sm:inline">New Log</span>
-							<Icon path={mdiPlus} size={1} className="inline sm:hidden" />
-						</Link>
+						<a href={`/characters/${character.id}/log/new`} className="btn-primary btn hidden sm:btn-sm sm:inline-flex sm:px-3" aria-label="New Log">
+							New Log
+						</a>
 					)}
-					{logs && (
+					{logs.length && (
+						<input
+							type="text"
+							placeholder="Search"
+							onChange={e => setSearch(e.target.value)}
+							className="input-bordered input min-w-0 flex-1 sm:input-sm sm:max-w-xs"
+						/>
+					)}
+					{myCharacter && (
 						<>
-							<input type="text" placeholder="Search" onChange={e => setSearch(e.target.value)} className="input-bordered input input-sm w-full sm:max-w-xs" />
-							{myCharacter && (
-								<div className="form-control">
-									<label className="label cursor-pointer py-1">
-										<span className="label-text hidden pr-4 sm:inline">Notes</span>
-										<input type="checkbox" className="toggle-primary toggle" checked={descriptions} onChange={toggleDescriptions} />
-									</label>
-								</div>
-							)}
+							<Link href={`/characters/${character.id}/log/new`} className="btn-primary btn sm:btn-sm sm:hidden sm:px-3" aria-label="New Log">
+								<Icon path={mdiPlus} className="w-6" />
+							</Link>
+							<button
+								className={twMerge("btn sm:hidden", descriptions && "btn-primary")}
+								onClick={toggleDescriptions}
+								onKeyPress={() => {}}
+								role="button"
+								aria-label="Toggle Notes"
+								tabIndex={0}>
+								<Icon path={descriptions ? mdiEye : mdiEyeOff} className="w-6" />
+							</button>
 						</>
 					)}
 				</div>
+				{logs.length && (
+					<>
+						<div className="hidden flex-1 sm:block" />
+						<button
+							className={twMerge("btn hidden sm:btn-sm sm:inline-flex", descriptions && "btn-primary")}
+							onClick={toggleDescriptions}
+							onKeyPress={() => {}}
+							role="button"
+							aria-label="Toggle Notes"
+							tabIndex={0}>
+							<Icon path={descriptions ? mdiEye : mdiEyeOff} className="w-6" />
+							<span className="hidden sm:inline-flex">Notes</span>
+						</button>
+					</>
+				)}
 			</div>
-			{logs ? (
-				<section className="mt-4">
-					<div className="w-full overflow-x-auto rounded-lg bg-base-100">
-						<table className="table w-full">
-							<thead>
-								<tr className="bg-base-300">
-									<td className="print:p-2">Log Entry</td>
-									<td className="hidden print:table-cell print:p-2 sm:table-cell">Advancement</td>
-									<td className="hidden print:table-cell print:p-2 sm:table-cell">Treasure</td>
-									<td className="hidden print:!hidden md:table-cell">Story Awards</td>
-									{myCharacter && <td className="print:hidden"></td>}
-								</tr>
-							</thead>
-							<tbody>
-								{results.map(log => (
-									<CharacterLogRow
-										log={log}
-										search={search}
-										characterUserId={character.userId}
-										userId={userId}
-										descriptions={descriptions}
-										deleteLog={deleteLog}
-										key={log.id}
-										triggerModal={() =>
-											log.description &&
-											!descriptions &&
-											setModal({
-												name: log.name,
-												description: log.description,
-												date: log.date
-											})
-										}
-									/>
-								))}
-							</tbody>
-						</table>
-					</div>
-				</section>
-			) : (
-				<div className="flex h-96 w-full items-center justify-center">
-					<div className="radial-progress animate-spin text-secondary" style={{ "--value": 20 } as CSSProperties} />
+
+			<section className="mt-4">
+				<div className="w-full overflow-x-auto rounded-lg bg-base-100">
+					<table className="table w-full">
+						<thead>
+							<tr className="bg-base-300">
+								<td className="print:p-2">Log Entry</td>
+								<td className="hidden print:table-cell print:p-2 sm:table-cell">Advancement</td>
+								<td className="hidden print:table-cell print:p-2 sm:table-cell">Treasure</td>
+								<td className="hidden print:!hidden md:table-cell">Story Awards</td>
+								{myCharacter && <td className="print:hidden" />}
+							</tr>
+						</thead>
+						<tbody>
+							{results.map(log => (
+								<CharacterLogRow
+									log={log}
+									search={search}
+									characterUserId={character.userId}
+									userId={userId}
+									descriptions={descriptions}
+									deleteLog={deleteLog}
+									key={log.id}
+									triggerModal={() =>
+										log.description &&
+										!descriptions &&
+										setModal({
+											name: log.name,
+											description: log.description,
+											date: log.date
+										})
+									}
+								/>
+							))}
+						</tbody>
+					</table>
 				</div>
-			)}
+			</section>
 
 			<div className={twMerge("modal cursor-pointer", modal && "modal-open")} onClick={() => setModal(null)}>
 				{modal && (
@@ -501,19 +519,32 @@ const CharacterLogRow = ({
 			<tr className={twMerge("border-b-0 border-t-2 border-t-base-200 print:text-sm", deleting && "hidden", (log.saving || isPending) && "opacity-40")}>
 				<td
 					className={twMerge(
-						"!static align-top print:p-2",
+						"!static pb-0 align-top print:p-2 sm:pb-3",
+						(!descriptions || !log.description) && "pb-3",
 						log.saving && "bg-neutral-focus",
 						(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && "border-b-0"
 					)}>
-					<p className="whitespace-pre-wrap font-semibold text-accent-content" onClick={triggerModal}>
+					<div
+						className="whitespace-pre-wrap font-semibold text-accent-content"
+						onClick={() => triggerModal()}
+						onKeyPress={() => {}}
+						role="button"
+						tabIndex={0}>
 						<SearchResults text={log.name} search={search} />
-					</p>
-					<p className="text-netural-content mb-2 text-xs font-normal" suppressHydrationWarning>
+					</div>
+					<p className="text-netural-content mb-2 whitespace-nowrap text-xs font-normal">
 						{new Date(log.is_dm_log && log.applied_date ? log.applied_date : log.date).toLocaleString()}
 					</p>
-					{log.dm && log.type === "game" && log.dm.uid !== characterUserId && (
+					{log.dm && log.type === "game" && log.dm.uid !== userId && (
 						<p className="text-sm font-normal">
-							<span className="font-semibold">DM:</span> {log.dm.name}
+							<span className="font-semibold">DM:</span>{" "}
+							{myCharacter ? (
+								<a href="/dms/{log.dm.id}" className="text-secondary">
+									{log.dm.name}
+								</a>
+							) : (
+								log.dm.name
+							)}
 						</p>
 					)}
 					<div className="table-cell font-normal print:hidden sm:hidden">
@@ -549,12 +580,6 @@ const CharacterLogRow = ({
 								<span className="font-semibold">Gold:</span> {log.gold.toLocaleString("en-US")}
 							</p>
 						)}
-						<div>
-							<Items title="Magic Items" items={log.magic_items_gained} search={search} />
-							<p className="whitespace-pre-wrap text-sm line-through">
-								<SearchResults text={log.magic_items_lost.map(mi => mi.name).join(" | ")} search={search} />
-							</p>
-						</div>
 					</div>
 				</td>
 				<td
@@ -632,14 +657,18 @@ const CharacterLogRow = ({
 							(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && "border-b-0"
 						)}>
 						<div className="flex flex-col justify-center gap-2">
-							<Link href={`/characters/${log.characterId}/log/${log.id}`} className={twMerge("btn-primary btn-sm btn", log.saving && "btn-disabled")}>
+							<Link
+								href={`/characters/${log.characterId}/log/${log.id}`}
+								className={twMerge("btn-primary btn sm:btn-sm", log.saving && "btn-disabled")}
+								aria-label="Edit Log">
 								<Icon path={mdiPencil} size={0.8} />
 							</Link>
 							<button
-								className="btn-sm btn"
+								className="btn-delete btn sm:btn-sm"
 								disabled={isPending}
 								type="button"
-								onClick={e => {
+								aria-label="Delete Log"
+								onClick={() => {
 									if (confirm(`Are you sure you want to delete ${log.name}? This action cannot be reversed.`)) {
 										setDeleting(true);
 										startTransition(async () => {

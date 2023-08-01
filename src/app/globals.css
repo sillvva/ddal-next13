@@ -50,6 +50,15 @@
 		--tw-drop-shadow: drop-shadow(0 4px 3px rgb(0 0 0 / 0.2)) drop-shadow(0 1px 1px rgb(0 0 0 / 1));
 		@apply print:drop-shadow-none;
 	}
+	.btn {
+		@apply bg-base-100 text-base-content;
+	}
+	.btn-primary {
+		@apply bg-primary text-white;
+	}
+	.btn-delete {
+		@apply bg-red-800 text-white hover:bg-red-900;
+	}
 	.grid-characters {
 		grid-template-columns: auto 1fr auto auto auto;
 	}
