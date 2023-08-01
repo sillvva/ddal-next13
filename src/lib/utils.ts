@@ -1,8 +1,6 @@
 import { CharacterData } from "$src/server/db/characters";
 import dayjs from "dayjs";
-import qs from "qs";
 import { twMerge } from "tailwind-merge";
-import { ZodSchema } from "zod";
 
 const parseObjectPrimitives = (obj: Record<string, any>): any => {
 	return Object.fromEntries(
@@ -15,24 +13,6 @@ const parseObjectPrimitives = (obj: Record<string, any>): any => {
 			return [k, null];
 		})
 	);
-};
-
-export const qsParse = <T>(queryString: string | Record<string, any>, schema: ZodSchema<T>) => {
-	const parsed =
-		typeof queryString === "string"
-			? qs.parse(queryString, {
-					ignoreQueryPrefix: true
-			  })
-			: queryString;
-
-	const zResult = schema.safeParse(parseObjectPrimitives(parsed));
-
-	return {
-		data: zResult.success ? zResult.data : ({} as T),
-		errors: !zResult.success
-			? zResult.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).reduce((acc, v) => (acc.includes(v) ? acc : [...acc, v]), [] as string[])
-			: []
-	};
 };
 
 export const parseError = (e: unknown) => {

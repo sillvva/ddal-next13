@@ -1,8 +1,8 @@
 "use server";
-import { NewCharacterSchema } from "$src/types/schemas";
 import { getCharacter } from "../db/characters";
 import { prisma } from "../db/client";
 
+import type { NewCharacterSchema } from "$src/types/schemas";
 import type { Character } from "@prisma/client";
 
 export type SaveCharacterResult = ReturnType<typeof saveCharacter>;

@@ -5,7 +5,6 @@ import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { deleteDM, saveDM } from "$src/server/actions/dm";
 import { getUserDMWithLogs, getUserDMWithLogsCache } from "$src/server/db/dms";
-import { DungeonMasterSchema } from "$src/types/schemas";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
@@ -14,7 +13,9 @@ import { redirect } from "next/navigation";
 import { mdiPencil } from "@mdi/js";
 import Icon from "@mdi/react";
 
+import type { DungeonMasterSchema } from "$src/types/schemas";
 import type { Metadata } from "next";
+
 let dm: Awaited<ReturnType<typeof getUserDMWithLogs>>;
 
 export default async function Page({ params: { dmId } }: { params: { dmId: string } }) {
