@@ -1,7 +1,7 @@
 "use client";
 
+import { getMagicItems, getStoryAwards } from "$src/lib/entities";
 import { formatDate } from "$src/lib/utils";
-import { getCharacter } from "$src/server/db/characters";
 import { dungeonMasterSchema, logSchema, newCharacterSchema, valibotResolver } from "$src/types/schemas";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -20,7 +20,6 @@ import type { SaveDMResult } from "$src/server/actions/dm";
 import type { CharacterData, CharactersData } from "$src/server/db/characters";
 import type { LogData } from "$src/server/db/log";
 import type { UserDMWithLogs } from "$src/server/db/dms";
-
 export function EditCharacterForm({
 	id,
 	character,
@@ -539,7 +538,7 @@ export function EditCharacterLogForm({
 								</div>
 							</>
 						)}
-						<div className={twMerge("form-control w-full", type === "game" ? "col-span-12 sm:col-span-2" : "col-span-4")}>
+						<div className={twMerge("form-control w-full", type === "game" ? "col-span-6 sm:col-span-2" : "col-span-4")}>
 							<label className="label">
 								<span className="label-text">Gold</span>
 							</label>
@@ -552,7 +551,7 @@ export function EditCharacterLogForm({
 								<span className="label-text-alt text-error">{form.formState.errors.gold?.message}</span>
 							</label>
 						</div>
-						<div className={twMerge("form-control w-full", type === "game" ? "col-span-12 sm:col-span-2" : "col-span-4")}>
+						<div className={twMerge("form-control w-full", type === "game" ? "col-span-6 sm:col-span-2" : "col-span-4")}>
 							<label className="label">
 								<span className="label-text overflow-hidden text-ellipsis whitespace-nowrap">Downtime Days</span>
 							</label>
@@ -1317,61 +1316,3 @@ export function EditDMForm({ dm, saveDM }: { dm: Exclude<UserDMWithLogs, null>; 
 		</form>
 	);
 }
-
-export const getMagicItems = (
-	character: Exclude<Awaited<ReturnType<typeof getCharacter>>, null>,
-	options?: {
-		lastLogId?: string;
-		excludeDropped?: boolean;
-	}
-) => {
-	const { lastLogId = "", excludeDropped = false } = options || {};
-	const magicItems: MagicItem[] = [];
-	let lastLog = false;
-	character.logs.forEach(log => {
-		if (lastLog) return;
-		if (log.id === lastLogId) {
-			lastLog = true;
-			return;
-		}
-		log.magic_items_gained.forEach(item => {
-			magicItems.push(item);
-		});
-		log.magic_items_lost.forEach(item => {
-			magicItems.splice(
-				magicItems.findIndex(i => i.id === item.id),
-				1
-			);
-		});
-	});
-	return magicItems.filter(item => !excludeDropped || !item.logLostId);
-};
-
-export const getStoryAwards = (
-	character: Exclude<Awaited<ReturnType<typeof getCharacter>>, null>,
-	options?: {
-		lastLogId?: string;
-		excludeDropped?: boolean;
-	}
-) => {
-	const { lastLogId = "", excludeDropped = false } = options || {};
-	const storyAwards: MagicItem[] = [];
-	let lastLog = false;
-	character.logs.forEach(log => {
-		if (lastLog) return;
-		if (log.id === lastLogId) {
-			lastLog = true;
-			return;
-		}
-		log.story_awards_gained.forEach(item => {
-			storyAwards.push(item);
-		});
-		log.story_awards_lost.forEach(item => {
-			storyAwards.splice(
-				storyAwards.findIndex(i => i.id === item.id),
-				1
-			);
-		});
-	});
-	return storyAwards.filter(item => !excludeDropped || !item.logLostId);
-};
