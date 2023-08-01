@@ -2,6 +2,8 @@ import { CharacterData } from "$src/server/db/characters";
 import dayjs from "dayjs";
 import { twMerge } from "tailwind-merge";
 
+export const stopWords = new Set(["and", "or", "to", "in", "a", "the", "of"]);
+
 const parseObjectPrimitives = (obj: Record<string, any>): any => {
 	return Object.fromEntries(
 		Object.entries(obj).map(([k, v]) => {

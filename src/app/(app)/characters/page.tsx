@@ -8,7 +8,7 @@ import { getServerSession } from "next-auth";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { mdiDotsHorizontal, mdiPlus } from "@mdi/js";
+import { mdiDotsHorizontal } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
@@ -30,24 +30,25 @@ export default async function Page() {
 
 	const characterCookie = getCookie(charactersCookieSchema);
 
+	const headersList = headers();
+	const mobile = !!headersList
+		.get("user-agent")
+		?.match(
+			/Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Kindle|NetFront|Silk-Accelerated|(hpw|web)OS|Fennec|Minimo|Opera M(obi|ini)|Blazer|Dolfin|Dolphin|Skyfire|Zune/
+		);
+
 	return (
 		<div className="flex flex-col gap-4">
-			<div className="flex gap-4">
+			<div className="hidden gap-4 sm:flex">
 				<BreadCrumbs crumbs={[{ name: "Characters" }]} />
-				<div className="flex-1" />
-				{characters && characters.length > 0 && (
-					<Link href="/characters/new" className="btn-primary btn-sm btn">
-						<span className="hidden sm:inline">New Character</span>
-						<Icon path={mdiPlus} className="inline w-4 sm:hidden" />
-					</Link>
-				)}
+
 				<div className="dropdown-end dropdown">
-					<label tabIndex={1} className="btn-sm btn">
-						<Icon path={mdiDotsHorizontal} size={1} />
-					</label>
-					<ul tabIndex={1} className="dropdown-content menu rounded-box w-52 bg-base-100 p-2 shadow">
+					<span role="button" tabIndex={0} className="btn-sm btn bg-base-100">
+						<Icon path={mdiDotsHorizontal} className="w-6" />
+					</span>
+					<ul className="dropdown-content menu rounded-box w-52 bg-base-100 p-2 shadow">
 						<li>
-							<a download={`characters.json`} href={`/api/exports/characters/all`} target="_blank" rel="noreferrer noopener">
+							<a download={`characters.json`} href={`/api/export/characters/all`} target="_blank" rel="noreferrer noopener">
 								Export
 							</a>
 						</li>
@@ -55,7 +56,7 @@ export default async function Page() {
 				</div>
 			</div>
 
-			<CharactersTable characters={characters} cookie={{ name: charactersCookieSchema.name, value: characterCookie }} />
+			<CharactersTable characters={characters} cookie={{ name: charactersCookieSchema.name, value: characterCookie }} mobile={mobile} />
 		</div>
 	);
 }
