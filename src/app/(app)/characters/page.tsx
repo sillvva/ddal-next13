@@ -1,12 +1,11 @@
 import { BreadCrumbs } from "$src/components/breadcrumbs";
 import { CharactersTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
-import { appMeta } from "$src/lib/meta";
+import { appMeta, isMobile } from "$src/lib/meta";
 import { getCookie } from "$src/lib/store";
 import { getCharacterCache, getCharactersCache } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
 import { headers } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { mdiDotsHorizontal } from "@mdi/js";
 import Icon from "@mdi/react";
@@ -30,12 +29,7 @@ export default async function Page() {
 
 	const characterCookie = getCookie(charactersCookieSchema);
 
-	const headersList = headers();
-	const mobile = !!headersList
-		.get("user-agent")
-		?.match(
-			/Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Kindle|NetFront|Silk-Accelerated|(hpw|web)OS|Fennec|Minimo|Opera M(obi|ini)|Blazer|Dolfin|Dolphin|Skyfire|Zune/
-		);
+	const mobile = isMobile();
 
 	return (
 		<div className="flex flex-col gap-4">

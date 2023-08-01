@@ -96,23 +96,21 @@ export const editCharacterSchema = merge([object({ id: string() }), newCharacter
 
 export const valibotResolver = <T extends ObjectShape>(schema: ObjectSchema<T>) => {
 	try {
-		const resolver: Resolver<Output<typeof schema>> = async values => {
+		return (async values => {
 			return {
 				values: schema.parse(values),
 				errors: {}
 			};
-		};
-		return resolver;
+		}) satisfies Resolver<Output<typeof schema>>;
 	} catch (err) {
 		if (err instanceof ValiError) {
 			const errors = flatten(err);
-			const resolver: Resolver<Output<typeof schema>> = async values => {
+			return (async values => {
 				return {
 					values,
 					errors
 				};
-			};
-			return resolver;
+			}) satisfies Resolver<Output<typeof schema>>;
 		}
 	}
 };

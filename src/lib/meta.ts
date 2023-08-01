@@ -1,4 +1,6 @@
 import { CharacterData } from "$src/server/db/characters";
+import { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
+import { headers } from "next/headers";
 
 export const appMeta = (path: string, title: string) => {
 	const openGraph = {
@@ -70,3 +72,12 @@ export const characterMeta = (character: CharacterData, path: string) => {
 		}
 	};
 };
+
+export function isMobile(headersList?: ReadonlyHeaders) {
+	if (!headersList) headersList = headers();
+	return !!headersList
+		.get("user-agent")
+		?.match(
+			/Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Kindle|NetFront|Silk-Accelerated|(hpw|web)OS|Fennec|Minimo|Opera M(obi|ini)|Blazer|Dolfin|Dolphin|Skyfire|Zune/
+		);
+}
