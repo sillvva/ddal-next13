@@ -69,7 +69,7 @@ export function CharactersTable({
 		return () => charactersSearch.removeAll();
 	}, [indexed]);
 
-	const msResults = useMemo(() => charactersSearch.search(search), [charactersSearch, search]);
+	const msResults = useMemo(() => charactersSearch.search(search), [search]);
 	const resultsMap = useMemo(() => new Map(msResults.map(result => [result.id, result])), [msResults]);
 	const results = useMemo(
 		() =>

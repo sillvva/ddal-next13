@@ -31,7 +31,17 @@ export function LazyImage({
 		return () => {
 			if (node) observer.unobserve(node);
 		};
-	}, []);
+	}, [ioParams]);
 
-	return <img data-src={src} src="/images/icon-180.png" width={width} height={height} className={className} alt={alt} ref={ref} />;
+	return (
+		<img
+			data-src={src}
+			src="/images/icon-180.png"
+			width={typeof width === "string" ? Number(width) : width || 180}
+			height={typeof height === "string" ? Number(height) : height || 180}
+			className={className}
+			alt={alt || ""}
+			ref={ref}
+		/>
+	);
 }

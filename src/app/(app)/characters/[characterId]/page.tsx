@@ -12,6 +12,7 @@ import { getCharacterCache } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { mdiDotsHorizontal } from "@mdi/js";
@@ -88,7 +89,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 						{character.image_url && (
 							<div className="relative mr-4 hidden flex-col items-end justify-center print:hidden xs:flex md:hidden">
 								<a href={character.image_url} target="_blank" rel="noreferrer noopener" className="mask mask-squircle mx-auto h-20 w-full bg-primary">
-									<img src={character.image_url} className="h-full w-full object-cover object-top transition-all" alt={character.name} />
+									<Image src={character.image_url} className="h-full w-full object-cover object-top transition-all" alt={character.name} />
 								</a>
 							</div>
 						)}
@@ -145,7 +146,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 							{character.image_url && (
 								<div className="relative hidden flex-col items-end justify-center print:hidden md:flex">
 									<a href={character.image_url} target="_blank" rel="noreferrer noopener" className="mask mask-squircle mx-auto h-52 w-full bg-primary">
-										<img src={character.image_url} className="h-full w-full object-cover object-top transition-all" alt={character.name} />
+										<Image src={character.image_url} className="h-full w-full object-cover object-top transition-all" alt={character.name} />
 									</a>
 								</div>
 							)}

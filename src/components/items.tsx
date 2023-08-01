@@ -2,7 +2,7 @@
 
 import { Markdown } from "$src/components/markdown";
 import { sorter } from "$src/lib/utils";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { mdiChevronDown, mdiChevronUp } from "@mdi/js";
 import Icon from "@mdi/react";
@@ -27,19 +27,22 @@ export function Items({
 	const [modal, setModal] = useState<{ name: string; description: string; date?: Date } | null>(null);
 	const [collapsed, setCollapsed] = useState(collapsible);
 
-	const itemsMap = new Map<string, number>();
+	const itemsMap = useMemo(() => new Map<string, number>(), []);
 
-	const sorterName = (name: string) =>
-		sort
-			? name
-					.replace(/^\d+x? ?/, "")
-					.replace("Spell Scroll", "Scroll")
-					.replace(/^(\w+)s/, "$1")
-					.replace(/^(A|An|The) /, "")
-			: name;
-	const isConsumable = (name: string) => name.trim().match(/^(\d+x? )?((Potion|Scroll|Spell Scroll|Charm|Elixir)s? of)/);
-	const itemQty = (item: { name: string }) => parseInt(item.name.match(/^(\d+)x? /)?.[1] || "1");
-	const clearQty = (name: string) => name.replace(/^\d+x? ?/, "");
+	const sorterName = useCallback(
+		(name: string) =>
+			sort
+				? name
+						.replace(/^\d+x? ?/, "")
+						.replace("Spell Scroll", "Scroll")
+						.replace(/^(\w+)s/, "$1")
+						.replace(/^(A|An|The) /, "")
+				: name,
+		[sort]
+	);
+	const isConsumable = useCallback((name: string) => name.trim().match(/^(\d+x? )?((Potion|Scroll|Spell Scroll|Charm|Elixir)s? of)/), []);
+	const itemQty = useCallback((item: { name: string }) => parseInt(item.name.match(/^(\d+)x? /)?.[1] || "1"), []);
+	const clearQty = useCallback((name: string) => name.replace(/^\d+x? ?/, ""), []);
 
 	const clonedItems = useMemo(() => structuredClone(items), [items]);
 
@@ -84,12 +87,12 @@ export function Items({
 
 					return acc;
 				}, [] as typeof items),
-		[clonedItems]
+		[clonedItems, itemsMap, sorterName, itemQty, isConsumable, clearQty]
 	);
 
 	const sortedItems = useMemo(
 		() => (sort ? consolidatedItems.sort((a, b) => sorter(sorterName(a.name), sorterName(b.name))) : consolidatedItems),
-		[consolidatedItems]
+		[consolidatedItems, sort, sorterName]
 	);
 
 	return (

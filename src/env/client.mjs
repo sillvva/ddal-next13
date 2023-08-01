@@ -14,21 +14,21 @@ export const formatErrors = (
 
 const _clientEnv = safeParse(clientSchema, clientEnv);
 
+if (!_clientEnv.success) {
+	const flatErrors = flatten(_clientEnv.error);
+	console.error("❌ Invalid environment variables:\n", ...formatErrors(flatErrors.nested));
+	throw new Error("Invalid environment variables");
+}
+
 /**
  * Validate that client-side environment variables are exposed to the client.
  */
-for (let key of Object.keys(_clientEnv)) {
+for (let key of Object.keys(_clientEnv.data)) {
 	if (!key.startsWith("NEXT_PUBLIC_")) {
 		console.warn("❌ Invalid public environment variable name:", key);
 
 		throw new Error("Invalid public environment variable name");
 	}
-}
-
-if (!_clientEnv.success) {
-	const flatErrors = flatten(_clientEnv.error);
-	console.error("❌ Invalid environment variables:\n", ...formatErrors(flatErrors.nested));
-	throw new Error("Invalid environment variables");
 }
 
 export const env = _clientEnv.data;

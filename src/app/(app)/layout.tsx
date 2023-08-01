@@ -67,7 +67,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 										<div className="hidden items-center px-4 text-accent-content print:flex sm:flex">{session?.user?.name}</div>
 										<div className="avatar">
 											<div className="relative w-11 overflow-hidden rounded-full ring ring-primary ring-offset-2 ring-offset-base-100">
-												<img
+												<Image
 													src={session?.user?.image || ""}
 													alt={session?.user?.name || "User"}
 													width={48}
