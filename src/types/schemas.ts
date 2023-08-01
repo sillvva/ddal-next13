@@ -17,11 +17,11 @@ import {
 	ObjectShape,
 	Output,
 	regex,
+	safeParse,
 	string,
 	union,
 	url,
-	useDefault,
-	ValiError
+	useDefault as def
 } from "valibot";
 
 export const dateSchema = union([date(), string([isoTimestamp()])]);
@@ -30,65 +30,65 @@ export type DungeonMasterSchema = Output<typeof dungeonMasterSchema>;
 export const dungeonMasterSchema = object({
 	id: string(),
 	name: string([minLength(1, "Required")]),
-	DCI: useDefault(nullable(string([regex(/[0-9]{0,10}/, "Invalid DCI Format")])), null),
-	uid: useDefault(nullish(string()), "")
+	DCI: def(nullable(string([regex(/[0-9]{0,10}/, "Invalid DCI Format")])), null),
+	uid: def(nullish(string()), "")
 });
 
 export type LogSchema = Output<typeof logSchema>;
 export const logSchema = object({
-	id: useDefault(string(), ""),
+	id: def(string(), ""),
 	name: string([minLength(1, "Required")]),
 	date: dateSchema,
-	characterId: useDefault(string(), ""),
-	characterName: useDefault(string(), ""),
-	type: useDefault(union([literal("game"), literal("nongame")]), "game"),
-	experience: useDefault(number("Must be a number"), 0),
-	acp: useDefault(number([minValue(0, "Must be a non-negative number")]), 0),
-	tcp: useDefault(number("Must be a number"), 0),
-	level: useDefault(number([minValue(0, "Must be a non-negative number")]), 0),
-	gold: useDefault(number("Must be a number"), 0),
-	dtd: useDefault(number("Must be a number"), 0),
-	description: useDefault(string(), ""),
+	characterId: def(string(), ""),
+	characterName: def(string(), ""),
+	type: def(union([literal("game"), literal("nongame")]), "game"),
+	experience: def(number("Must be a number"), 0),
+	acp: def(number([minValue(0, "Must be a non-negative number")]), 0),
+	tcp: def(number("Must be a number"), 0),
+	level: def(number([minValue(0, "Must be a non-negative number")]), 0),
+	gold: def(number("Must be a number"), 0),
+	dtd: def(number("Must be a number"), 0),
+	description: def(string(), ""),
 	dm: object({
-		id: useDefault(string(), ""),
-		name: useDefault(string(), ""),
-		DCI: useDefault(nullable(string([regex(/[0-9]{0,10}/, "Invalid DCI Format")])), null),
-		uid: useDefault(nullish(string()), "")
+		id: def(string(), ""),
+		name: def(string(), ""),
+		DCI: def(nullable(string([regex(/[0-9]{0,10}/, "Invalid DCI Format")])), null),
+		uid: def(nullish(string()), "")
 	}),
-	is_dm_log: useDefault(boolean(), false),
-	applied_date: useDefault(nullable(dateSchema), null),
-	magic_items_gained: useDefault(
+	is_dm_log: def(boolean(), false),
+	applied_date: def(nullable(dateSchema), null),
+	magic_items_gained: def(
 		array(
 			object({
-				id: useDefault(string(), ""),
+				id: def(string(), ""),
 				name: string([minLength(1, "Required")]),
-				description: useDefault(string(), "")
+				description: def(string(), "")
 			})
 		),
 		[]
 	),
-	magic_items_lost: useDefault(array(string([minLength(1, "Required")])), []),
-	story_awards_gained: useDefault(
+	magic_items_lost: def(array(string([minLength(1, "Required")])), []),
+	story_awards_gained: def(
 		array(
 			object({
-				id: useDefault(string(), ""),
+				id: def(string(), ""),
 				name: string([minLength(1, "Required")]),
-				description: useDefault(string(), "")
+				description: def(string(), "")
 			})
 		),
 		[]
 	),
-	story_awards_lost: useDefault(array(string([minLength(1, "Required")])), [])
+	story_awards_lost: def(array(string([minLength(1, "Required")])), [])
 });
 
 export type NewCharacterSchema = Output<typeof newCharacterSchema>;
 export const newCharacterSchema = object({
 	name: string([minLength(1, "Required")]),
 	campaign: string([minLength(1, "Required")]),
-	race: useDefault(string(), ""),
-	class: useDefault(string(), ""),
-	character_sheet_url: useDefault(string([url()]), ""),
-	image_url: useDefault(string([url()]), "")
+	race: def(string(), ""),
+	class: def(string(), ""),
+	character_sheet_url: def(string([url()]), ""),
+	image_url: def(string([url()]), "")
 });
 
 export type EditCharacterSchema = Output<typeof editCharacterSchema>;
@@ -96,47 +96,19 @@ export const editCharacterSchema = merge([object({ id: string() }), newCharacter
 
 export const valibotResolver = <T extends ObjectShape>(schema: ObjectSchema<T>) => {
 	return (async values => {
-		try {
-			const parsedValues = schema.parse(values);
+		const parsedValues = safeParse(schema, values);
+
+		if (!parsedValues.success) {
+			const errors = flatten(parsedValues.error);
 			return {
-				values: parsedValues,
-				errors: {}
+				values,
+				errors: Object.fromEntries(Object.entries(errors.nested).map(([key, value]) => [key, { message: value?.join(", ") }]))
 			};
-		} catch (err) {
-			if (err instanceof ValiError) {
-				const errors = flatten(err);
-				return {
-					values,
-					errors: Object.fromEntries(Object.entries(errors.nested).map(([key, value]) => [key, { message: value?.join(", ") }]))
-				};
-			} else if (err instanceof Error) {
-				return {
-					values,
-					errors: {
-						form: {
-							message: err.message
-						}
-					}
-				};
-			} else if (typeof err === "string") {
-				return {
-					values,
-					errors: {
-						form: {
-							message: err
-						}
-					}
-				};
-			} else {
-				return {
-					values,
-					errors: {
-						form: {
-							message: "An unknown error occurred"
-						}
-					}
-				};
-			}
 		}
+
+		return {
+			values: parsedValues.data,
+			errors: {}
+		};
 	}) satisfies Resolver<Output<typeof schema>>;
 };

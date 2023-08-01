@@ -6,7 +6,7 @@ import { dungeonMasterSchema, logSchema, newCharacterSchema, valibotResolver } f
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { twMerge } from "tailwind-merge";
-import { flatten, ValiError } from "valibot";
+import { flatten, safeParse } from "valibot";
 import { mdiAlertCircle, mdiTrashCan } from "@mdi/js";
 import Icon from "@mdi/react";
 import AutoFillSelect from "./autofill";
@@ -286,34 +286,30 @@ export function EditCharacterLogForm({
 
 		if (!selectedLog.id) values.date = date.toISOString();
 
-		try {
-			const parsedResult = logSchema.parse(values);
-			if (parsedResult) {
-				setSaving(true);
-				startTransition(async () => {
-					const result = await saveLog(parsedResult);
-					if (result.error) {
-						setMutError(result.error);
-						setSaving(false);
-					}
-				});
-			}
-		} catch (err) {
-			if (err instanceof ValiError) {
-				const flatErrors = flatten(err);
-				for (const field in flatErrors.nested) {
-					const fieldName = field as (typeof issueFields)[number];
-					const message = flatErrors.nested[field]?.join(", ");
-					const issueFields = ["date", "name", "dm.name", "description", "characterId", "experience", "acp", "tcp", "level", "gold"] as const;
-					if (issueFields.find(i => i == field)) {
-						form.setError(fieldName, { message });
-					}
-					if (field.match(/magic_items_gained\.\d+\.name/)) {
-						form.setError(fieldName, { message });
-					}
-					if (field.match(/story_awards_gained\.\d+\.name/)) {
-						form.setError(fieldName, { message });
-					}
+		const parsedResult = safeParse(logSchema, values);
+		if (parsedResult.success) {
+			setSaving(true);
+			startTransition(async () => {
+				const result = await saveLog(parsedResult.data);
+				if (result.error) {
+					setMutError(result.error);
+					setSaving(false);
+				}
+			});
+		} else {
+			const flatErrors = flatten(parsedResult.error);
+			for (const field in flatErrors.nested) {
+				const fieldName = field as (typeof issueFields)[number];
+				const message = flatErrors.nested[field]?.join(", ");
+				const issueFields = ["date", "name", "dm.name", "description", "characterId", "experience", "acp", "tcp", "level", "gold"] as const;
+				if (issueFields.find(i => i == field)) {
+					form.setError(fieldName, { message });
+				}
+				if (field.match(/magic_items_gained\.\d+\.name/)) {
+					form.setError(fieldName, { message });
+				}
+				if (field.match(/story_awards_gained\.\d+\.name/)) {
+					form.setError(fieldName, { message });
 				}
 			}
 		}
@@ -838,34 +834,30 @@ export function EditDMLogForm({
 
 		if (!log.id) values.date = date.toISOString();
 
-		try {
-			const parsedResult = logSchema.parse(values);
-			if (parsedResult) {
-				setSaving(true);
-				startTransition(async () => {
-					const result = await saveLog(parsedResult);
-					if (result.error) {
-						setMutError(result.error);
-						setSaving(false);
-					}
-				});
-			}
-		} catch (err) {
-			if (err instanceof ValiError) {
-				const flatErrors = flatten(err);
-				for (const field in flatErrors.nested) {
-					const fieldName = field as (typeof issueFields)[number];
-					const message = flatErrors.nested[field]?.join(", ");
-					const issueFields = ["date", "name", "dm.name", "description", "characterId", "experience", "acp", "tcp", "level", "gold"] as const;
-					if (issueFields.find(i => i == field)) {
-						form.setError(fieldName, { message });
-					}
-					if (field.match(/magic_items_gained\.\d+\.name/)) {
-						form.setError(fieldName, { message });
-					}
-					if (field.match(/story_awards_gained\.\d+\.name/)) {
-						form.setError(fieldName, { message });
-					}
+		const parsedResult = safeParse(logSchema, values);
+		if (parsedResult.success) {
+			setSaving(true);
+			startTransition(async () => {
+				const result = await saveLog(parsedResult.data);
+				if (result.error) {
+					setMutError(result.error);
+					setSaving(false);
+				}
+			});
+		} else {
+			const flatErrors = flatten(parsedResult.error);
+			for (const field in flatErrors.nested) {
+				const fieldName = field as (typeof issueFields)[number];
+				const message = flatErrors.nested[field]?.join(", ");
+				const issueFields = ["date", "name", "dm.name", "description", "characterId", "experience", "acp", "tcp", "level", "gold"] as const;
+				if (issueFields.find(i => i == field)) {
+					form.setError(fieldName, { message });
+				}
+				if (field.match(/magic_items_gained\.\d+\.name/)) {
+					form.setError(fieldName, { message });
+				}
+				if (field.match(/story_awards_gained\.\d+\.name/)) {
+					form.setError(fieldName, { message });
 				}
 			}
 		}

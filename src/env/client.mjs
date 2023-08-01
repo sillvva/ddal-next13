@@ -1,5 +1,5 @@
 // @ts-check
-import { ValiError, flatten } from "valibot";
+import { flatten, safeParse } from "valibot";
 import { clientEnv, clientSchema } from "./schema.mjs";
 
 export const formatErrors = (
@@ -12,29 +12,23 @@ export const formatErrors = (
 		})
 		.filter(Boolean);
 
-function checkEnv() {
-	try {
-		const _clientEnv = clientSchema.parse(clientEnv);
+const _clientEnv = safeParse(clientSchema, clientEnv);
 
-		/**
-		 * Validate that client-side environment variables are exposed to the client.
-		 */
-		for (let key of Object.keys(_clientEnv)) {
-			if (!key.startsWith("NEXT_PUBLIC_")) {
-				console.warn("❌ Invalid public environment variable name:", key);
+/**
+ * Validate that client-side environment variables are exposed to the client.
+ */
+for (let key of Object.keys(_clientEnv)) {
+	if (!key.startsWith("NEXT_PUBLIC_")) {
+		console.warn("❌ Invalid public environment variable name:", key);
 
-				throw new Error("Invalid public environment variable name");
-			}
-		}
-
-		return _clientEnv;
-	} catch (err) {
-		if (err instanceof ValiError) {
-			const flatErrors = flatten(err);
-			console.error("❌ Invalid environment variables:\n", ...formatErrors(flatErrors.nested));
-			throw new Error("Invalid environment variables");
-		}
+		throw new Error("Invalid public environment variable name");
 	}
 }
 
-export const env = checkEnv();
+if (!_clientEnv.success) {
+	const flatErrors = flatten(_clientEnv.error);
+	console.error("❌ Invalid environment variables:\n", ...formatErrors(flatErrors.nested));
+	throw new Error("Invalid environment variables");
+}
+
+export const env = _clientEnv.data;
