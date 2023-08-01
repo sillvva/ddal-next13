@@ -5,7 +5,7 @@ import { saveCharacter } from "$src/server/actions/character";
 import { getCharacter } from "$src/server/db/characters";
 import { newCharacterSchema } from "$src/types/zod-schema";
 import { getServerSession } from "next-auth";
-import { revalidatePath } from "next/cache";
+// import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -48,7 +48,8 @@ export default async function Page({ params: { characterId } }: { params: { char
 		"use server";
 		const result = await saveCharacter(characterId, session?.user?.id || "", data);
 		if (result.id) {
-			revalidatePath(`/characters/${result.id}`);
+			// revalidatePath(`/characters/${result.id}`);
+			// revalidatePath(`/characters`);
 			redirect(`/characters/${result.id}`);
 		}
 		return result;

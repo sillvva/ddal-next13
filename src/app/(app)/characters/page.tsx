@@ -2,9 +2,8 @@ import { CharactersTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { getCookie } from "$src/lib/store";
-import { getCharacters } from "$src/server/db/characters";
+import { CharactersData, getCharacterCache, getCharactersCache } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
-import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -25,13 +24,11 @@ export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
 
-	const characters = await getCharacters(session.user.id);
-	const characterCookie = getCookie(charactersCookieSchema);
+	const charactersData = await getCharactersCache(session.user.id);
+	const characterData = await Promise.all(charactersData.map(character => getCharacterCache(character.id)));
+	const characters = characterData.filter(Boolean) as CharactersData;
 
-	const actionRevalidate = async () => {
-		"use server";
-		revalidatePath(`/characters`);
-	};
+	const characterCookie = getCookie(charactersCookieSchema);
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -65,7 +62,7 @@ export default async function Page() {
 				</div>
 			</div>
 
-			<CharactersTable characters={characters} cookie={{ name: charactersCookieSchema.name, value: characterCookie }} revalidate={actionRevalidate} />
+			<CharactersTable characters={characters} cookie={{ name: charactersCookieSchema.name, value: characterCookie }} />
 		</div>
 	);
 }

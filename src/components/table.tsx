@@ -5,6 +5,7 @@ import { setCookie } from "$src/lib/misc";
 import { DeleteDMResult } from "$src/server/actions/dm";
 import { UserDMsWithLogs } from "$src/server/db/dms";
 import { DMLogData } from "$src/server/db/log";
+import { sorter } from "$src/types/util";
 import MiniSearch from "minisearch";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,7 +20,6 @@ import { SearchResults } from "./search";
 import type { CharacterData, CharactersData } from "$src/server/db/characters";
 import type { CharactersCookie } from "$src/app/(app)/characters/page";
 import type { CharacterCookie } from "$src/app/(app)/characters/[characterId]/page";
-
 let stopWords = new Set(["and", "or", "to", "in", "a", "the"]);
 const charactersSearch = new MiniSearch({
 	fields: ["characterName", "campaign", "race", "class", "magicItems", "tier", "level"],
@@ -30,15 +30,7 @@ const charactersSearch = new MiniSearch({
 	}
 });
 
-export function CharactersTable({
-	characters,
-	cookie,
-	revalidate
-}: {
-	characters: CharactersData;
-	cookie: { name: string; value: CharactersCookie };
-	revalidate: () => Promise<void>;
-}) {
+export function CharactersTable({ characters, cookie }: { characters: CharactersData; cookie: { name: string; value: CharactersCookie } }) {
 	const [search, setSearch] = useState("");
 	const [magicItems, setMagicItems] = useState(cookie.value.magicItems);
 	const router = useRouter();
@@ -97,8 +89,7 @@ export function CharactersTable({
 	const toggleMagicItems = useCallback(() => {
 		setCookie(cookie.name, { ...cookie.value, magicItems: !magicItems });
 		setMagicItems(!magicItems);
-		revalidate();
-	}, [magicItems, cookie, revalidate]);
+	}, [magicItems, cookie]);
 
 	useEffect(() => {
 		setCookie(cookie.name, cookie.value);
@@ -211,14 +202,12 @@ export function CharacterLogTable({
 	character,
 	userId,
 	cookie,
-	deleteLog,
-	revalidate
+	deleteLog
 }: {
 	character: CharacterData;
 	userId: string;
 	cookie: { name: string; value: CharacterCookie };
 	deleteLog: (logId: string) => DeleteLogResult;
-	revalidate: () => Promise<void>;
 }) {
 	const myCharacter = character.userId === userId;
 	const [search, setSearch] = useState("");
@@ -262,8 +251,7 @@ export function CharacterLogTable({
 	const toggleDescriptions = useCallback(() => {
 		setCookie(cookie.name, { ...cookie.value, descriptions: !descriptions });
 		setDescriptions(!descriptions);
-		revalidate();
-	}, [descriptions, cookie, revalidate]);
+	}, [descriptions, cookie]);
 
 	useEffect(() => {
 		setCookie(cookie.name, cookie.value);
@@ -279,9 +267,9 @@ export function CharacterLogTable({
 						...log,
 						score: results.find(result => result.id === log.id)?.score || 0 - log.date.getTime()
 					}))
-					.sort((a, b) => a.date.getTime() - b.date.getTime());
+					.sort((a, b) => sorter(a.date, b.date));
 			} else {
-				return logs.sort((a, b) => a.date.getTime() - b.date.getTime());
+				return logs.sort((a, b) => sorter(a.date, b.date));
 			}
 		} else {
 			return [];

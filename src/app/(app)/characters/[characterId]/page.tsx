@@ -5,16 +5,18 @@ import { authOptions } from "$src/lib/auth";
 import { appMeta, characterMeta } from "$src/lib/meta";
 import { slugify } from "$src/lib/misc";
 import { getCookie } from "$src/lib/store";
-import { deleteCharacter } from "$src/server/actions/character";
 import { deleteLog } from "$src/server/actions/log";
-import { getCharacter } from "$src/server/db/characters";
+import { getCharacterCache } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { mdiDotsHorizontal, mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
+
+import type { Metadata } from "next";
+import type { CharacterData } from "./get/route";
 
 const characterCookieSchema = {
 	name: "character",
@@ -24,16 +26,16 @@ const characterCookieSchema = {
 };
 
 export type CharacterCookie = (typeof characterCookieSchema)["defaults"];
-let character: Awaited<ReturnType<typeof getCharacter>>;
 
 export default async function Page({ params: { characterId } }: { params: { characterId: string } }) {
 	if (characterId === "new") throw redirect("/characters/new/edit");
 
 	const session = await getServerSession(authOptions);
-	character = await getCharacter(characterId);
-	const myCharacter = character?.userId === session?.user?.id;
 
+	const character = await getCharacterCache(characterId);
 	if (!character) throw redirect(session?.user ? "/characters" : "/");
+
+	const myCharacter = character?.userId === session?.user?.id;
 
 	const characterCookie = getCookie(characterCookieSchema);
 
@@ -41,25 +43,9 @@ export default async function Page({ params: { characterId } }: { params: { char
 		"use server";
 		const result = await deleteLog(logId, session?.user?.id);
 		if (result.id) {
-			revalidatePath(`/character/${result.id}`);
-			revalidatePath("/characters");
+			revalidateTag(`character-${characterId}`);
 		}
 		return result;
-	};
-
-	const actionDeleteCharacter = async () => {
-		"use server";
-		const result = await deleteCharacter(characterId, session?.user?.id);
-		if (result && result.id) {
-			revalidatePath("/characters");
-			redirect("/characters");
-		}
-		return result;
-	};
-
-	const actionRevalidate = async () => {
-		"use server";
-		revalidatePath(`/characters/${characterId}`);
 	};
 
 	return (
@@ -97,7 +83,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 									</a>
 								</li>
 								<li>
-									<DeleteCharacter characterId={characterId} deleteCharacter={actionDeleteCharacter} />
+									<DeleteCharacter characterId={characterId} />
 								</li>
 							</ul>
 						</div>
@@ -169,20 +155,22 @@ export default async function Page({ params: { characterId } }: { params: { char
 				userId={session?.user?.id || ""}
 				cookie={{ name: characterCookieSchema.name, value: characterCookie }}
 				deleteLog={actionDeleteLog}
-				revalidate={actionRevalidate}
 			/>
 		</>
 	);
 }
 
-import type { Metadata } from "next";
 export async function generateMetadata({ params: { characterId } }: { params: { characterId: string } }): Promise<Metadata> {
 	const headersList = headers();
 	const domain = headersList.get("host") || "";
 	const fullUrl = headersList.get("referer") || "";
 	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
 
-	if (!character) character = await getCharacter(characterId);
+	const res = await fetch(`http://localhost:3000/characters/${characterId}/get`, {
+		cache: "no-store"
+	});
+	if (!res.ok) return appMeta(path, "Character Not Found");
+	const character = (await res.json()) as CharacterData;
 
 	if (character) return characterMeta(character, path);
 	else return appMeta(path, "Character Not Found");

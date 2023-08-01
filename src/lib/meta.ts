@@ -1,4 +1,4 @@
-import { CharacterData } from "$src/server/db/characters";
+import { CharacterData } from "$src/app/(app)/characters/[characterId]/get/route";
 
 export const appMeta = (path: string, title: string) => {
 	const openGraph = {
@@ -61,6 +61,7 @@ export const characterMeta = (character: CharacterData, path: string) => {
 	};
 
 	return {
+		metadataBase: new URL("https://ddal.dekok.app"),
 		title,
 		openGraph,
 		twitter,
