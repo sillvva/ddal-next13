@@ -40,10 +40,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 							<Link href="/characters" className="hidden items-center p-2 md:flex">
 								Character Logs
 							</Link>
-							<Link href="/dm-logs" className="hidden items-center p-2 md:flex">
+							<Link href="/dm-logs" className="hidden items-center p-2 md:flex" prefetch={false}>
 								DM Logs
 							</Link>
-							<Link href="/dms" className="hidden items-center p-2 md:flex">
+							<Link href="/dms" className="hidden items-center p-2 md:flex" prefetch={false}>
 								DMs
 							</Link>
 							<div className="flex-1">&nbsp;</div>

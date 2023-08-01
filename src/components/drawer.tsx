@@ -31,10 +31,14 @@ export const Drawer = () => {
 						<Link href="/characters">Character Logs</Link>
 					</li>
 					<li>
-						<Link href="/dm-logs">DM Logs</Link>
+						<Link href="/dm-logs" prefetch={false}>
+							DM Logs
+						</Link>
 					</li>
 					<li>
-						<Link href="/dms">DMs</Link>
+						<Link href="/dms" prefetch={false}>
+							DMs
+						</Link>
 					</li>
 				</ul>
 				<div className="divider"></div>
