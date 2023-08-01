@@ -7,7 +7,7 @@ import { UserDMsWithLogs } from "$src/server/db/dms";
 import { DMLogData } from "$src/server/db/log";
 import MiniSearch from "minisearch";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { twMerge } from "tailwind-merge";
 import { mdiAccount, mdiEye, mdiEyeOff, mdiFormatListText, mdiPencil, mdiPlus, mdiTrashCan, mdiViewGrid } from "@mdi/js";
 import Icon from "@mdi/react";
@@ -178,7 +178,7 @@ export function CharactersTable({
 						<div className="text-center">Level</div>
 					</header>
 					{results.map(character => (
-						<Link href={`/characters/${character.id}`} className="img-grow">
+						<Link href={`/characters/${character.id}`} className="img-grow" key={character.id}>
 							{!mobile && (
 								<div className="hidden pr-0 transition-colors sm:block sm:pr-2">
 									<div className="avatar">
@@ -232,7 +232,7 @@ export function CharactersTable({
 			{[1, 2, 3, 4].map(
 				tier =>
 					results.filter(c => c.tier == tier).length && (
-						<>
+						<Fragment key={tier}>
 							<h1 className={twMerge("text-2xl font-bold dark:text-white", display == "list" && "hidden", display == "grid" && "hidden xs:block")}>
 								Tier {tier}
 							</h1>
@@ -250,7 +250,7 @@ export function CharactersTable({
 											result => result.id == character.id && result.terms.find(term => result.match[term].includes("magicItems"))
 										);
 										return (
-											<a href={`/characters/${character.id}`} className="img-grow card-compact card bg-base-100 shadow-xl">
+											<a href={`/characters/${character.id}`} className="img-grow card-compact card bg-base-100 shadow-xl" key={character.id}>
 												<figure className="relative aspect-square overflow-hidden">
 													{character.image_url ? (
 														<LazyImage
@@ -287,7 +287,7 @@ export function CharactersTable({
 										);
 									})}
 							</div>
-						</>
+						</Fragment>
 					)
 			)}
 		</>

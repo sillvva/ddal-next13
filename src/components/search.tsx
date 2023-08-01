@@ -59,5 +59,13 @@ export function SearchResults({
 
 	if (!(parts.length && regex)) return items;
 
-	return parts.map(part => (regex.test(part) ? <span className="bg-secondary px-1 text-black">{part}</span> : part));
+	return parts.map((part, i) =>
+		regex.test(part) ? (
+			<span key={`part-${i}`} className="bg-secondary px-1 text-black">
+				{part}
+			</span>
+		) : (
+			part
+		)
+	);
 }

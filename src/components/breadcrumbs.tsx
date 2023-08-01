@@ -15,13 +15,15 @@ export function BreadCrumbs({ crumbs }: { crumbs: { name: string; href?: string 
 				</li>
 				{items.map(bc =>
 					bc.href ? (
-						<li>
+						<li key={bc.name}>
 							<a href={bc.href} className="text-secondary">
 								{bc.name}
 							</a>
 						</li>
 					) : (
-						<li className="overflow-hidden text-ellipsis whitespace-nowrap dark:drop-shadow-md">{bc.name}</li>
+						<li className="overflow-hidden text-ellipsis whitespace-nowrap dark:drop-shadow-md" key={bc.name}>
+							{bc.name}
+						</li>
 					)
 				)}
 			</ul>

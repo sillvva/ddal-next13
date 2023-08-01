@@ -108,6 +108,7 @@ export function Items({
 						? sortedItems.map(mi => (
 								<span
 									role={mi.description ? "button" : "presentation"}
+									key={mi.id}
 									className={twMerge("inline px-2 first:pl-0", mi.description && "text-secondary", formatting && isConsumable(mi.name) && "italic")}
 									onClick={() => {
 										if (mi.description) {
