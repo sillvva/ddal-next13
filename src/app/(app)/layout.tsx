@@ -30,7 +30,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 						src={background}
 						alt="Background"
 						priority
-						fill
 						className="!fixed z-0 min-h-screen min-w-full object-cover object-center opacity-40 dark:opacity-20 print:hidden"
 					/>
 				)}
