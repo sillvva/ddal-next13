@@ -2,9 +2,10 @@ import { EditCharacterForm } from "$src/components/forms";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { saveCharacter } from "$src/server/actions/character";
-import { getCharacter } from "$src/server/db/characters";
+import { getCharacter, getCharacterCache } from "$src/server/db/characters";
 import { newCharacterSchema } from "$src/types/zod-schema";
 import { getServerSession } from "next-auth";
+import { revalidateTag } from "next/cache";
 // import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
@@ -14,7 +15,6 @@ import { mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
-
 let character: Awaited<ReturnType<typeof getCharacter>>;
 
 export default async function Page({ params: { characterId } }: { params: { characterId: string } }) {
@@ -31,7 +31,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 	};
 
 	if (characterId !== "new") {
-		character = await getCharacter(characterId);
+		character = await getCharacterCache(characterId);
 		if (character?.userId !== session?.user?.id) throw redirect("/characters");
 
 		if (character) {
@@ -48,8 +48,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 		"use server";
 		const result = await saveCharacter(characterId, session?.user?.id || "", data);
 		if (result.id) {
-			// revalidatePath(`/characters/${result.id}`);
-			// revalidatePath(`/characters`);
+			revalidateTag(`character-${result.id}`);
 			redirect(`/characters/${result.id}`);
 		}
 		return result;
@@ -95,7 +94,7 @@ export async function generateMetadata({ params: { characterId } }: { params: { 
 
 	if (characterId === "new") return appMeta(path, "New Character");
 
-	if (!character) character = await getCharacter(characterId);
+	if (!character) character = await getCharacterCache(characterId);
 	if (character) return appMeta(path, `Edit ${character.name}`);
 	else return appMeta(path, "Character Not Found");
 }

@@ -6,7 +6,7 @@ import { PageLoader } from "./portals";
 import type { DeleteCharacterResult } from "$src/server/actions/character";
 import type { DeleteDMResult } from "$src/server/actions/dm";
 
-export function DeleteCharacter({ characterId }: { characterId: string }) {
+export function DeleteCharacter({ deleteCharacter }: { deleteCharacter: () => DeleteCharacterResult }) {
 	const [isPending, startTransition] = useTransition();
 	const [deleting, setDeleting] = useState(false);
 
@@ -24,10 +24,7 @@ export function DeleteCharacter({ characterId }: { characterId: string }) {
 					if (confirm("Are you sure you want to delete this character? This action cannot be undone.")) {
 						setDeleting(true);
 						startTransition(async () => {
-							const response = await fetch(`/characters/${characterId}/delete`, {
-								method: "DELETE"
-							});
-							const result = (await response.json()) as Awaited<DeleteCharacterResult>;
+							const result = await deleteCharacter();
 							if (result.id) {
 								redirect("/characters");
 							}

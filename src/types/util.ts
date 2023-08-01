@@ -1,4 +1,4 @@
-import { CharacterData } from "$src/app/(app)/characters/[characterId]/get/route";
+import { CharacterData } from "$src/server/db/characters";
 import { NextResponse } from "next/server";
 
 export type ExtractResponse<P> = P extends (...args: any) => any

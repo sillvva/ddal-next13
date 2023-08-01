@@ -5,6 +5,7 @@ import { authOptions } from "$src/lib/auth";
 import { appMeta, characterMeta } from "$src/lib/meta";
 import { slugify } from "$src/lib/misc";
 import { getCookie } from "$src/lib/store";
+import { deleteCharacter } from "$src/server/actions/character";
 import { deleteLog } from "$src/server/actions/log";
 import { getCharacterCache } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
@@ -16,7 +17,6 @@ import { mdiDotsHorizontal, mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
-import type { CharacterData } from "./get/route";
 
 const characterCookieSchema = {
 	name: "character",
@@ -44,6 +44,15 @@ export default async function Page({ params: { characterId } }: { params: { char
 		const result = await deleteLog(logId, session?.user?.id);
 		if (result.id) {
 			revalidateTag(`character-${characterId}`);
+		}
+		return result;
+	};
+
+	const actionDeleteCharacter = async () => {
+		"use server";
+		const result = await deleteCharacter(characterId, session?.user?.id);
+		if (result.id) {
+			revalidateTag(`characters-${session?.user?.id}`);
 		}
 		return result;
 	};
@@ -83,7 +92,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 									</a>
 								</li>
 								<li>
-									<DeleteCharacter characterId={characterId} />
+									<DeleteCharacter deleteCharacter={actionDeleteCharacter} />
 								</li>
 							</ul>
 						</div>
@@ -166,12 +175,7 @@ export async function generateMetadata({ params: { characterId } }: { params: { 
 	const fullUrl = headersList.get("referer") || "";
 	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
 
-	const res = await fetch(`http://localhost:3000/characters/${characterId}/get`, {
-		cache: "no-store"
-	});
-	if (!res.ok) return appMeta(path, "Character Not Found");
-	const character = (await res.json()) as CharacterData;
-
+	const character = await getCharacterCache(characterId);
 	if (character) return characterMeta(character, path);
 	else return appMeta(path, "Character Not Found");
 }

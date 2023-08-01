@@ -6,7 +6,7 @@ import { getCharacter } from "$src/server/db/characters";
 import { getUserDMs } from "$src/server/db/dms";
 import { logSchema } from "$src/types/zod-schema";
 import { getServerSession } from "next-auth";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -32,9 +32,7 @@ export default async function Page({ params: { characterId, logId } }: { params:
 		"use server";
 		const result = await saveLog(characterId, logId, data, session?.user);
 		if (result?.id) {
-			revalidatePath("/characters");
-			revalidatePath(`/characters/${characterId}`);
-			revalidatePath(`/characters/${characterId}/log/${result.id}`);
+			revalidateTag(`character-${characterId}`);
 			redirect(`/characters/${characterId}`);
 		}
 		return result;

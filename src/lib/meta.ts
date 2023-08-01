@@ -1,4 +1,4 @@
-import { CharacterData } from "$src/app/(app)/characters/[characterId]/get/route";
+import { CharacterData } from "$src/server/db/characters";
 
 export const appMeta = (path: string, title: string) => {
 	const openGraph = {
