@@ -95,22 +95,48 @@ export type EditCharacterSchema = Output<typeof editCharacterSchema>;
 export const editCharacterSchema = merge([object({ id: string() }), newCharacterSchema]);
 
 export const valibotResolver = <T extends ObjectShape>(schema: ObjectSchema<T>) => {
-	try {
-		return (async values => {
+	return (async values => {
+		try {
+			const parsedValues = schema.parse(values);
 			return {
-				values: schema.parse(values),
+				values: parsedValues,
 				errors: {}
 			};
-		}) satisfies Resolver<Output<typeof schema>>;
-	} catch (err) {
-		if (err instanceof ValiError) {
-			const errors = flatten(err);
-			return (async values => {
+		} catch (err) {
+			if (err instanceof ValiError) {
+				const errors = flatten(err);
 				return {
 					values,
-					errors
+					errors: Object.fromEntries(Object.entries(errors.nested).map(([key, value]) => [key, { message: value?.join(", ") }]))
 				};
-			}) satisfies Resolver<Output<typeof schema>>;
+			} else if (err instanceof Error) {
+				return {
+					values,
+					errors: {
+						form: {
+							message: err.message
+						}
+					}
+				};
+			} else if (typeof err === "string") {
+				return {
+					values,
+					errors: {
+						form: {
+							message: err
+						}
+					}
+				};
+			} else {
+				return {
+					values,
+					errors: {
+						form: {
+							message: "An unknown error occurred"
+						}
+					}
+				};
+			}
 		}
-	}
+	}) satisfies Resolver<Output<typeof schema>>;
 };
