@@ -2,11 +2,11 @@ import { EditDMLogForm } from "$src/components/forms";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { saveLog } from "$src/server/actions/log";
-import { getCharacters } from "$src/server/db/characters";
-import { getLog } from "$src/server/db/log";
+import { getCharactersCache } from "$src/server/db/characters";
+import { getLogCache } from "$src/server/db/log";
 import { logSchema } from "$src/types/zod-schema";
 import { getServerSession } from "next-auth";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -21,7 +21,7 @@ export default async function Page({ params: { logId } }: { params: { logId: str
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
 
-	let log = await getLog(logId);
+	let log = await getLogCache(logId, true);
 	if (logId !== "new" && !log) throw redirect(`/dm-logs`);
 
 	log = log
@@ -60,25 +60,18 @@ export default async function Page({ params: { logId } }: { params: { logId: str
 				story_awards_lost: []
 		  };
 
-	const characters = (await getCharacters(session.user.id)).map(c => ({
-		...c,
-		logs: c.logs.map(l => ({
-			...l,
-			saving: false
-		}))
-	}));
+	const characters = await getCharactersCache(session.user.id);
 
 	const actionSaveLog = async (data: z.infer<typeof logSchema>) => {
 		"use server";
 		const characterId = data.characterId;
 		const result = await saveLog(characterId, logId, data, session?.user);
 		if (result?.id) {
-			revalidatePath("/dm-logs");
-			revalidatePath(`/dm-logs/${result.id}`);
+			revalidateTag(`dm-logs-${session?.user?.id}`);
+			revalidateTag(`dm-log-${result.id}`);
 			if (characterId) {
-				revalidatePath("/characters");
-				revalidatePath(`/characters/${characterId}`);
-				revalidatePath(`/characters/${characterId}/log/${result.id}`);
+				revalidateTag(`characters-${session?.user?.id}`);
+				revalidateTag(`character-${characterId}`);
 			}
 			redirect(`/dm-logs`);
 		}

@@ -17,7 +17,7 @@ import type { DungeonMaster, LogType, MagicItem } from "@prisma/client";
 import type { SaveCharacterResult } from "$src/server/actions/character";
 import type { SaveLogResult } from "$src/server/actions/log";
 import type { SaveDMResult } from "$src/server/actions/dm";
-import type { CharacterData } from "$src/server/db/characters";
+import type { CharacterData, CharactersData } from "$src/server/db/characters";
 import type { LogData } from "$src/server/db/log";
 import type { UserDMWithLogs } from "$src/server/db/dms";
 
@@ -785,7 +785,7 @@ export function EditDMLogForm({
 }: {
 	id: string;
 	log: LogData;
-	characters: CharacterData[];
+	characters: CharactersData;
 	saveLog: (data: z.infer<typeof logSchema>) => SaveLogResult;
 }) {
 	const [isPending, startTransition] = useTransition();

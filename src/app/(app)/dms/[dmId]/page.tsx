@@ -127,7 +127,7 @@ export async function generateMetadata({ params: { dmId } }: { params: { dmId: s
 	const fullUrl = headersList.get("referer") || "";
 	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
 
-	if (!dm) dm = await getUserDMWithLogs(session?.user?.id || "", dmId);
+	if (!dm) dm = await getUserDMWithLogsCache(session?.user?.id || "", dmId);
 
 	return appMeta(path, `Edit ${dm?.name}`);
 }

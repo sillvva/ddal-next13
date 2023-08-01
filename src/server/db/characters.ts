@@ -71,24 +71,6 @@ export function getCharactersCache(userId: string) {
 	)();
 }
 
-export async function getCharacterLogs(characterId: string) {
-	const logs = await prisma.log.findMany({
-		include: {
-			dm: true,
-			magic_items_gained: true,
-			magic_items_lost: true,
-			story_awards_gained: true,
-			story_awards_lost: true
-		},
-		orderBy: {
-			date: "asc"
-		},
-		where: { characterId: characterId }
-	});
-
-	return getLogsSummary(logs);
-}
-
 export function getLevels(logs: Log[], base: { level?: number; experience?: number; acp?: number } = { level: 0, experience: 0, acp: 0 }) {
 	if (!logs) logs = [];
 	let totalLevel = 1;

@@ -2,7 +2,7 @@ import { DMLogTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { deleteLog } from "$src/server/actions/log";
-import { DMLogData, getDMLogs } from "$src/server/db/log";
+import { DMLogData, getDMLogsCache } from "$src/server/db/log";
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -17,7 +17,7 @@ export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
 
-	const logs = (await getDMLogs(session.user.id, session.user.name || "")).map(log => ({
+	const logs = (await getDMLogsCache(session.user.id, session.user.name || "")).map(log => ({
 		...log,
 		dateString: new Date(log.date).toLocaleString("en-US")
 	}));
