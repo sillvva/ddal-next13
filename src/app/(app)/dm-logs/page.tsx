@@ -1,3 +1,4 @@
+import { BreadCrumbs } from "$src/components/breadcrumbs";
 import { DMLogTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
@@ -8,11 +9,10 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { mdiDotsHorizontal, mdiHome } from "@mdi/js";
+import { mdiDotsHorizontal } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
-
 export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
@@ -39,14 +39,7 @@ export default async function Page() {
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex gap-4 print:hidden">
-				<div className="breadcrumbs flex-1 text-sm">
-					<ul>
-						<li>
-							<Icon path={mdiHome} className="w-4" />
-						</li>
-						<li className="dark:drop-shadow-md">DM Logs</li>
-					</ul>
-				</div>
+				<BreadCrumbs crumbs={[{ name: "DM Logs" }]} />
 				{logs && logs.length > 0 && (
 					<div className="flex flex-1 justify-end">
 						<Link href="/dm-logs/new" className="btn-primary btn-sm btn">

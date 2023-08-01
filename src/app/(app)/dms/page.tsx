@@ -1,3 +1,4 @@
+import { BreadCrumbs } from "$src/components/breadcrumbs";
 import { DMTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
@@ -7,11 +8,9 @@ import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
-
 export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
@@ -31,17 +30,7 @@ export default async function Page() {
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div className="flex gap-4 print:hidden">
-				<div className="breadcrumbs flex-1 text-sm">
-					<ul>
-						<li>
-							<Icon path={mdiHome} className="w-4" />
-						</li>
-						<li className="dark:drop-shadow-md">DMs</li>
-					</ul>
-				</div>
-			</div>
-
+			<BreadCrumbs crumbs={[{ name: "DMs" }]} />
 			<DMTable dms={dms} deleteDM={actionDeleteDM} />
 		</div>
 	);

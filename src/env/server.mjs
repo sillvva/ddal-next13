@@ -5,26 +5,31 @@
  */
 import { serverSchema } from "./schema.mjs";
 import { env as clientEnv, formatErrors } from "./client.mjs";
+import { ValiError, flatten } from "valibot";
 
-const _serverEnv = serverSchema.safeParse(process.env);
+function checkEnv() {
+	try {
+		const _serverEnv = serverSchema.parse(process.env);
 
-if (!_serverEnv.success) {
-  console.error(
-    "❌ Invalid environment variables:\n",
-    ...formatErrors(_serverEnv.error.format()),
-  );
-  throw new Error("Invalid environment variables");
+		/**
+		 * Validate that server-side environment variables are not exposed to the client.
+		 */
+		for (let key of Object.keys(_serverEnv)) {
+			if (key.startsWith("NEXT_PUBLIC_")) {
+				console.warn("❌ You are exposing a server-side env-variable:", key);
+
+				throw new Error("You are exposing a server-side env-variable");
+			}
+		}
+
+		return _serverEnv;
+	} catch (err) {
+		if (err instanceof ValiError) {
+			const flatErrors = flatten(err);
+			console.error("❌ Invalid environment variables:\n", ...formatErrors(flatErrors.nested));
+			throw new Error("Invalid environment variables");
+		}
+	}
 }
 
-/**
- * Validate that server-side environment variables are not exposed to the client.
- */
-for (let key of Object.keys(_serverEnv.data)) {
-  if (key.startsWith("NEXT_PUBLIC_")) {
-    console.warn("❌ You are exposing a server-side env-variable:", key);
-
-    throw new Error("You are exposing a server-side env-variable");
-  }
-}
-
-export const env = { ..._serverEnv.data, ...clientEnv };
+export const env = { ...checkEnv(), ...clientEnv };

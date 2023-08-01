@@ -1,4 +1,5 @@
 import { DeleteCharacter } from "$src/components/actions";
+import { BreadCrumbs } from "$src/components/breadcrumbs";
 import { Items } from "$src/components/items";
 import { CharacterLogTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
@@ -13,7 +14,7 @@ import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { mdiDotsHorizontal, mdiHome } from "@mdi/js";
+import { mdiDotsHorizontal } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
@@ -58,19 +59,8 @@ export default async function Page({ params: { characterId } }: { params: { char
 	return (
 		<>
 			<div className="flex gap-4 print:hidden">
-				<div className="breadcrumbs mb-4 flex-1 text-sm">
-					<ul>
-						<li>
-							<Icon path={mdiHome} className="w-4" />
-						</li>
-						<li>
-							<Link href="/characters" className="text-secondary">
-								Characters
-							</Link>
-						</li>
-						<li className="overflow-hidden text-ellipsis whitespace-nowrap dark:drop-shadow-md">{character.name}</li>
-					</ul>
-				</div>
+				<BreadCrumbs crumbs={[{ name: "Characters", href: "/characters" }, { name: character.name }]} />
+
 				{myCharacter && (
 					<>
 						<Link href={`/characters/${characterId}/edit`} className="btn-primary btn-sm btn hidden sm:flex">

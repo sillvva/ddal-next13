@@ -1,21 +1,20 @@
 import { DeleteDM } from "$src/components/actions";
+import { BreadCrumbs } from "$src/components/breadcrumbs";
 import { EditDMForm } from "$src/components/forms";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { deleteDM, saveDM } from "$src/server/actions/dm";
 import { getUserDMWithLogs, getUserDMWithLogsCache } from "$src/server/db/dms";
-import { dungeonMasterSchema } from "$src/types/zod-schema";
+import { DungeonMasterSchema } from "$src/types/schemas";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { z } from "zod";
-import { mdiHome, mdiPencil } from "@mdi/js";
+import { mdiPencil } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
-
 let dm: Awaited<ReturnType<typeof getUserDMWithLogs>>;
 
 export default async function Page({ params: { dmId } }: { params: { dmId: string } }) {
@@ -25,7 +24,7 @@ export default async function Page({ params: { dmId } }: { params: { dmId: strin
 	dm = await getUserDMWithLogsCache(session.user.id, dmId);
 	if (!dm) throw redirect("/dms");
 
-	const actionSaveDM = async (dm: z.infer<typeof dungeonMasterSchema>) => {
+	const actionSaveDM = async (dm: DungeonMasterSchema) => {
 		"use server";
 		const result = await saveDM(dm.id, session.user?.id || "", dm);
 		if (result.id) {
@@ -50,22 +49,7 @@ export default async function Page({ params: { dmId } }: { params: { dmId: strin
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div className="flex gap-4 print:hidden">
-				<div className="breadcrumbs flex-1 text-sm">
-					<ul>
-						<li>
-							<Icon path={mdiHome} className="w-4" />
-						</li>
-						<li>
-							<Link href="/dms" className="text-secondary">
-								DMs
-							</Link>
-						</li>
-						<li className="dark:drop-shadow-md">Edit {dm.name}</li>
-					</ul>
-				</div>
-			</div>
-
+			<BreadCrumbs crumbs={[{ name: "DMs" }, { name: dm.name, href: `/dms/${dm.id}` }, { name: "Edit" }]} />
 			<EditDMForm dm={dm} saveDM={actionSaveDM} />
 
 			<div className="mt-8 flex flex-col gap-4">

@@ -11,7 +11,7 @@ export async function getCharacter(characterId: string, includeLogs = true) {
 		where: { id: characterId }
 	});
 
-	if (!character) return null;
+	if (!character) throw new Error("Character not found");
 
 	const logs = includeLogs
 		? await prisma.log.findMany({

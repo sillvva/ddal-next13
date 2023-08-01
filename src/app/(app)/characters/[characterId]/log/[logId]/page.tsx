@@ -1,21 +1,17 @@
+import { BreadCrumbs } from "$src/components/breadcrumbs";
 import { EditCharacterLogForm } from "$src/components/forms";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { saveLog } from "$src/server/actions/log";
 import { getCharacterCache } from "$src/server/db/characters";
 import { getUserDMsCache } from "$src/server/db/dms";
-import { logSchema } from "$src/types/zod-schema";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { z } from "zod";
-import { mdiHome } from "@mdi/js";
-import Icon from "@mdi/react";
 
+import type { LogSchema } from "$src/types/schemas";
 import type { Metadata } from "next";
-
 export default async function Page({ params: { characterId, logId } }: { params: { characterId: string; logId: string } }) {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
@@ -28,9 +24,9 @@ export default async function Page({ params: { characterId, logId } }: { params:
 
 	const dms = await getUserDMsCache(session.user.id);
 
-	const actionSaveLog = async (data: z.infer<typeof logSchema>) => {
+	const actionSaveLog = async (data: LogSchema) => {
 		"use server";
-		const result = await saveLog(characterId, logId, data, session?.user);
+		const result = await saveLog(data, session?.user);
 		if (result?.id) {
 			revalidateTag(`character-${characterId}`);
 			redirect(`/characters/${characterId}`);
@@ -40,29 +36,9 @@ export default async function Page({ params: { characterId, logId } }: { params:
 
 	return (
 		<>
-			<div className="breadcrumbs mb-4 text-sm">
-				<ul>
-					<li>
-						<Icon path={mdiHome} className="w-4" />
-					</li>
-					<li>
-						<Link href="/characters" className="text-secondary">
-							Characters
-						</Link>
-					</li>
-					<li>
-						<Link href={`/characters/${characterId}`} className="text-secondary">
-							{character.name}
-						</Link>
-					</li>
-					{log?.name ? (
-						<li className="overflow-hidden text-ellipsis whitespace-nowrap dark:drop-shadow-md">{log.name}</li>
-					) : (
-						<li className="dark:drop-shadow-md">New Log</li>
-					)}
-				</ul>
-			</div>
-
+			<BreadCrumbs
+				crumbs={[{ name: "Characters", href: "/characters" }, { name: character.name, href: `/characters/${characterId}` }, { name: log?.name || "New Log" }]}
+			/>
 			<EditCharacterLogForm id={logId} log={log} dms={dms} character={character} saveLog={actionSaveLog} />
 		</>
 	);

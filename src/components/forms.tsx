@@ -2,17 +2,17 @@
 
 import { formatDate } from "$src/lib/utils";
 import { getCharacter } from "$src/server/db/characters";
-import { dungeonMasterSchema, logSchema, newCharacterSchema } from "$src/types/zod-schema";
+import { dungeonMasterSchema, logSchema, newCharacterSchema, valibotResolver } from "$src/types/schemas";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { twMerge } from "tailwind-merge";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { flatten, ValiError } from "valibot";
 import { mdiAlertCircle, mdiTrashCan } from "@mdi/js";
 import Icon from "@mdi/react";
 import AutoFillSelect from "./autofill";
 import AutoResizeTextArea from "./textarea";
 
+import type { DungeonMasterSchema, LogSchema, NewCharacterSchema } from "$src/types/schemas";
 import type { DungeonMaster, LogType, MagicItem } from "@prisma/client";
 import type { SaveCharacterResult } from "$src/server/actions/character";
 import type { SaveLogResult } from "$src/server/actions/log";
@@ -27,8 +27,8 @@ export function EditCharacterForm({
 	editCharacter
 }: {
 	id: string;
-	character: z.infer<typeof newCharacterSchema>;
-	editCharacter: (data: z.infer<typeof newCharacterSchema>) => SaveCharacterResult;
+	character: NewCharacterSchema;
+	editCharacter: (data: NewCharacterSchema) => SaveCharacterResult;
 }) {
 	const [isPending, startTransition] = useTransition();
 	const [saving, setSaving] = useState(false);
@@ -36,8 +36,8 @@ export function EditCharacterForm({
 		register,
 		formState: { errors },
 		handleSubmit
-	} = useForm<z.infer<typeof newCharacterSchema>>({
-		resolver: zodResolver(newCharacterSchema)
+	} = useForm<NewCharacterSchema>({
+		resolver: valibotResolver(newCharacterSchema)
 	});
 
 	const submitHandler = handleSubmit(data => {
@@ -176,12 +176,12 @@ export function EditCharacterLogForm({
 	log?: CharacterData["logs"][0];
 	dms: DungeonMaster[];
 	character: CharacterData;
-	saveLog: (data: z.infer<typeof logSchema>) => SaveLogResult;
+	saveLog: (data: LogSchema) => SaveLogResult;
 }) {
 	const [isPending, startTransition] = useTransition();
 	const [saving, setSaving] = useState(false);
-	const form = useForm<z.infer<typeof logSchema>>({
-		resolver: zodResolver(logSchema)
+	const form = useForm<LogSchema>({
+		resolver: valibotResolver(logSchema)
 	});
 
 	const selectedLog = useMemo(
@@ -274,7 +274,7 @@ export function EditCharacterLogForm({
 		form.handleSubmit(onSubmit)(e);
 	};
 
-	const onSubmit: SubmitHandler<z.infer<typeof logSchema>> = e => {
+	const onSubmit: SubmitHandler<LogSchema> = e => {
 		form.clearErrors();
 
 		const values = form.getValues();
@@ -286,38 +286,36 @@ export function EditCharacterLogForm({
 
 		if (!selectedLog.id) values.date = date.toISOString();
 
-		const parsedResult = logSchema.safeParse(values);
-		if (parsedResult.success) {
-			setSaving(true);
-			startTransition(async () => {
-				const result = await saveLog(parsedResult.data);
-				if (result.error) {
-					setMutError(result.error);
-					setSaving(false);
+		try {
+			const parsedResult = logSchema.parse(values);
+			if (parsedResult) {
+				setSaving(true);
+				startTransition(async () => {
+					const result = await saveLog(parsedResult);
+					if (result.error) {
+						setMutError(result.error);
+						setSaving(false);
+					}
+				});
+			}
+		} catch (err) {
+			if (err instanceof ValiError) {
+				const flatErrors = flatten(err);
+				for (const field in flatErrors.nested) {
+					const fieldName = field as (typeof issueFields)[number];
+					const message = flatErrors.nested[field]?.join(", ");
+					const issueFields = ["date", "name", "dm.name", "description", "characterId", "experience", "acp", "tcp", "level", "gold"] as const;
+					if (issueFields.find(i => i == field)) {
+						form.setError(fieldName, { message });
+					}
+					if (field.match(/magic_items_gained\.\d+\.name/)) {
+						form.setError(fieldName, { message });
+					}
+					if (field.match(/story_awards_gained\.\d+\.name/)) {
+						form.setError(fieldName, { message });
+					}
 				}
-			});
-			// ⬇️ This object destructuring is necessary. Otherwise it breaks.
-			// mutation.mutate({
-			// 	...values,
-			// 	dm: {
-			// 		...values.dm
-			// 	}
-			// });
-		} else {
-			parsedResult.error.issues.forEach(issue => {
-				const issueFields = ["date", "name", "dm.name", "description", "characterId", "experience", "acp", "tcp", "level", "gold"] as const;
-				if (issueFields.find(i => i == issue.path.join("."))) {
-					form.setError(issue.path.join(".") as (typeof issueFields)[number], {
-						message: issue.message
-					});
-				}
-				if (issue.path[0] == "magic_items_gained" && typeof issue.path[1] == "number" && issue.path[2] == "name") {
-					form.setError(`magic_items_gained.${issue.path[1]}.name`, { message: issue.message });
-				}
-				if (issue.path[0] == "story_awards_gained" && typeof issue.path[1] == "number" && issue.path[2] == "name") {
-					form.setError(`story_awards_gained.${issue.path[1]}.name`, { message: issue.message });
-				}
-			});
+			}
 		}
 	};
 
@@ -350,7 +348,7 @@ export function EditCharacterLogForm({
 
 			<form onSubmit={submitHandler}>
 				<input type="hidden" {...form.register("characterId", { value: character.id })} />
-				<input type="hidden" {...form.register("logId", { value: id === "new" ? "" : id })} />
+				<input type="hidden" {...form.register("id", { value: id === "new" ? "" : id })} />
 				<input type="hidden" {...form.register("is_dm_log", { value: selectedLog.is_dm_log })} />
 				<div className="grid grid-cols-12 gap-4">
 					{!selectedLog.is_dm_log && (
@@ -786,13 +784,13 @@ export function EditDMLogForm({
 	id: string;
 	log: LogData;
 	characters: CharactersData;
-	saveLog: (data: z.infer<typeof logSchema>) => SaveLogResult;
+	saveLog: (data: LogSchema) => SaveLogResult;
 }) {
 	const [isPending, startTransition] = useTransition();
 	const [saving, setSaving] = useState(false);
 
-	const form = useForm<z.infer<typeof logSchema>>({
-		resolver: zodResolver(logSchema)
+	const form = useForm<LogSchema>({
+		resolver: valibotResolver(logSchema)
 	});
 
 	const [date, setDate] = useState(log.date);
@@ -827,7 +825,7 @@ export function EditDMLogForm({
 		form.handleSubmit(onSubmit)(e);
 	};
 
-	const onSubmit: SubmitHandler<z.infer<typeof logSchema>> = e => {
+	const onSubmit: SubmitHandler<LogSchema> = e => {
 		form.clearErrors();
 
 		const values = form.getValues();
@@ -840,31 +838,36 @@ export function EditDMLogForm({
 
 		if (!log.id) values.date = date.toISOString();
 
-		const parsedResult = logSchema.safeParse(values);
-		if (parsedResult.success) {
-			setSaving(true);
-			startTransition(async () => {
-				const result = await saveLog(parsedResult.data);
-				if (result.error) {
-					setMutError(result.error);
-					setSaving(false);
+		try {
+			const parsedResult = logSchema.parse(values);
+			if (parsedResult) {
+				setSaving(true);
+				startTransition(async () => {
+					const result = await saveLog(parsedResult);
+					if (result.error) {
+						setMutError(result.error);
+						setSaving(false);
+					}
+				});
+			}
+		} catch (err) {
+			if (err instanceof ValiError) {
+				const flatErrors = flatten(err);
+				for (const field in flatErrors.nested) {
+					const fieldName = field as (typeof issueFields)[number];
+					const message = flatErrors.nested[field]?.join(", ");
+					const issueFields = ["date", "name", "dm.name", "description", "characterId", "experience", "acp", "tcp", "level", "gold"] as const;
+					if (issueFields.find(i => i == field)) {
+						form.setError(fieldName, { message });
+					}
+					if (field.match(/magic_items_gained\.\d+\.name/)) {
+						form.setError(fieldName, { message });
+					}
+					if (field.match(/story_awards_gained\.\d+\.name/)) {
+						form.setError(fieldName, { message });
+					}
 				}
-			});
-		} else {
-			parsedResult.error.issues.forEach(issue => {
-				const issueFields = ["date", "name", "dm.name", "description", "characterId", "experience", "acp", "tcp", "level", "gold"] as const;
-				if (issueFields.find(i => i == issue.path.join("."))) {
-					form.setError(issue.path.join(".") as (typeof issueFields)[number], {
-						message: issue.message
-					});
-				}
-				if (issue.path[0] == "magic_items_gained" && typeof issue.path[1] == "number" && issue.path[2] == "name") {
-					form.setError(`magic_items_gained.${issue.path[1]}.name`, { message: issue.message });
-				}
-				if (issue.path[0] == "story_awards_gained" && typeof issue.path[1] == "number" && issue.path[2] == "name") {
-					form.setError(`story_awards_gained.${issue.path[1]}.name`, { message: issue.message });
-				}
-			});
+			}
 		}
 	};
 
@@ -901,7 +904,7 @@ export function EditDMLogForm({
 				</div>
 			)}
 			<form onSubmit={submitHandler}>
-				<input type="hidden" {...form.register("logId", { value: id === "new" ? "" : id })} />
+				<input type="hidden" {...form.register("id", { value: id === "new" ? "" : id })} />
 				<input type="hidden" {...form.register("dm.id", { value: log.dm?.id || "" })} />
 				<input type="hidden" {...form.register("dm.DCI", { value: null })} />
 				<input type="hidden" {...form.register("dm.name", { value: log.dm?.name || "" })} />
@@ -1247,12 +1250,12 @@ export function EditDMLogForm({
 	);
 }
 
-export function EditDMForm({ dm, saveDM }: { dm: Exclude<UserDMWithLogs, null>; saveDM: (dm: z.infer<typeof dungeonMasterSchema>) => SaveDMResult }) {
+export function EditDMForm({ dm, saveDM }: { dm: Exclude<UserDMWithLogs, null>; saveDM: (dm: DungeonMasterSchema) => SaveDMResult }) {
 	const [isPending, startTransition] = useTransition();
 	const [saving, setSaving] = useState(false);
 
-	const form = useForm<z.infer<typeof dungeonMasterSchema>>({
-		resolver: zodResolver(dungeonMasterSchema)
+	const form = useForm<DungeonMasterSchema>({
+		resolver: valibotResolver(dungeonMasterSchema)
 	});
 
 	const submitHandler = form.handleSubmit(data => {

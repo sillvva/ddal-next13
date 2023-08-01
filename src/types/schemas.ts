@@ -1,24 +1,28 @@
+import { Resolver } from "react-hook-form";
 import {
 	array,
 	boolean,
 	date,
+	flatten,
 	isoTimestamp,
 	literal,
 	merge,
 	minLength,
-	minRange,
+	minValue,
 	nullable,
 	nullish,
 	number,
 	object,
+	ObjectSchema,
+	ObjectShape,
+	Output,
 	regex,
 	string,
 	union,
 	url,
-	useDefault
+	useDefault,
+	ValiError
 } from "valibot";
-
-import type { Output } from "valibot";
 
 export const dateSchema = union([date(), string([isoTimestamp()])]);
 
@@ -39,9 +43,9 @@ export const logSchema = object({
 	characterName: useDefault(string(), ""),
 	type: useDefault(union([literal("game"), literal("nongame")]), "game"),
 	experience: useDefault(number("Must be a number"), 0),
-	acp: useDefault(number([minRange(0, "Must be a non-negative number")]), 0),
+	acp: useDefault(number([minValue(0, "Must be a non-negative number")]), 0),
 	tcp: useDefault(number("Must be a number"), 0),
-	level: useDefault(number([minRange(0, "Must be a non-negative number")]), 0),
+	level: useDefault(number([minValue(0, "Must be a non-negative number")]), 0),
 	gold: useDefault(number("Must be a number"), 0),
 	dtd: useDefault(number("Must be a number"), 0),
 	description: useDefault(string(), ""),
@@ -89,3 +93,26 @@ export const newCharacterSchema = object({
 
 export type EditCharacterSchema = Output<typeof editCharacterSchema>;
 export const editCharacterSchema = merge([object({ id: string() }), newCharacterSchema]);
+
+export const valibotResolver = <T extends ObjectShape>(schema: ObjectSchema<T>) => {
+	try {
+		const resolver: Resolver<Output<typeof schema>> = async values => {
+			return {
+				values: schema.parse(values),
+				errors: {}
+			};
+		};
+		return resolver;
+	} catch (err) {
+		if (err instanceof ValiError) {
+			const errors = flatten(err);
+			const resolver: Resolver<Output<typeof schema>> = async values => {
+				return {
+					values,
+					errors
+				};
+			};
+			return resolver;
+		}
+	}
+};

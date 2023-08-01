@@ -1,3 +1,4 @@
+import { BreadCrumbs } from "$src/components/breadcrumbs";
 import { CharactersTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
@@ -7,11 +8,10 @@ import { getServerSession } from "next-auth";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { mdiDotsHorizontal, mdiHome, mdiPlus } from "@mdi/js";
+import { mdiDotsHorizontal, mdiPlus } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
-
 export type CharactersCookie = (typeof charactersCookieSchema)["defaults"];
 const charactersCookieSchema = {
 	name: "characters",
@@ -33,14 +33,7 @@ export default async function Page() {
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex gap-4">
-				<div className="breadcrumbs text-sm">
-					<ul>
-						<li>
-							<Icon path={mdiHome} className="w-4" />
-						</li>
-						<li className="dark:drop-shadow-md">Characters</li>
-					</ul>
-				</div>
+				<BreadCrumbs crumbs={[{ name: "Characters" }]} />
 				<div className="flex-1" />
 				{characters && characters.length > 0 && (
 					<Link href="/characters/new" className="btn-primary btn-sm btn">

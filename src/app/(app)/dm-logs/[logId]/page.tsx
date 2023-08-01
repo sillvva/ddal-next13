@@ -1,22 +1,18 @@
+import { BreadCrumbs } from "$src/components/breadcrumbs";
 import { EditDMLogForm } from "$src/components/forms";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { saveLog } from "$src/server/actions/log";
 import { getCharactersCache } from "$src/server/db/characters";
 import { getLogCache } from "$src/server/db/log";
-import { logSchema } from "$src/types/zod-schema";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { z } from "zod";
-import { mdiHome } from "@mdi/js";
-import Icon from "@mdi/react";
 
+import type { LogSchema } from "$src/types/schemas";
 import type { LogType } from "@prisma/client";
 import type { Metadata } from "next";
-
 export default async function Page({ params: { logId } }: { params: { logId: string } }) {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
@@ -62,10 +58,10 @@ export default async function Page({ params: { logId } }: { params: { logId: str
 
 	const characters = await getCharactersCache(session.user.id);
 
-	const actionSaveLog = async (data: z.infer<typeof logSchema>) => {
+	const actionSaveLog = async (data: LogSchema) => {
 		"use server";
 		const characterId = data.characterId;
-		const result = await saveLog(characterId, logId, data, session?.user);
+		const result = await saveLog(data, session?.user);
 		if (result?.id) {
 			revalidateTag(`dm-logs-${session?.user?.id}`);
 			revalidateTag(`dm-log-${result.id}`);
@@ -80,24 +76,7 @@ export default async function Page({ params: { logId } }: { params: { logId: str
 
 	return (
 		<>
-			<div className="breadcrumbs mb-4 text-sm">
-				<ul>
-					<li>
-						<Icon path={mdiHome} className="w-4" />
-					</li>
-					<li>
-						<Link href="/dm-logs" className="text-secondary">
-							DM Logs
-						</Link>
-					</li>
-					{logId !== "new" ? (
-						<li className="overflow-hidden text-ellipsis whitespace-nowrap dark:drop-shadow-md">{log.name}</li>
-					) : (
-						<li className="dark:drop-shadow-md">New Log</li>
-					)}
-				</ul>
-			</div>
-
+			<BreadCrumbs crumbs={[{ name: "DM Logs", href: "/dm-logs" }, { name: logId === "new" ? "New Log" : log.name }]} />
 			<EditDMLogForm id={logId} log={log} characters={characters} saveLog={actionSaveLog} />
 		</>
 	);

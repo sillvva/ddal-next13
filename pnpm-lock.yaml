@@ -89,9 +89,6 @@ dependencies:
   valibot:
     specifier: ^0.8.0
     version: 0.8.0
-  zod:
-    specifier: ^3.21.4
-    version: 3.21.4
 
 devDependencies:
   '@types/qs':
