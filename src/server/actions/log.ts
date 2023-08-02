@@ -273,7 +273,8 @@ export async function deleteLog(logId: string, userId?: string) {
 					character: true
 				}
 			});
-			if (log && log.character?.userId !== userId && log.dm?.uid !== userId) throw new Error("Not authorized");
+			if (!log) throw new Error("Log not found");
+			if (log.character?.userId !== userId && log.dm?.uid !== userId) throw new Error("Not authorized");
 			await tx.magicItem.updateMany({
 				where: {
 					logLostId: logId

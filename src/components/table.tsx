@@ -14,6 +14,7 @@ import Icon from "@mdi/react";
 import { LazyImage } from "./images";
 import { Items } from "./items";
 import { Markdown } from "./markdown";
+import { PageLoader } from "./portals";
 import { SearchResults } from "./search";
 
 import type { CharacterData } from "$src/server/db/characters";
@@ -516,7 +517,7 @@ const CharacterLogRow = ({
 
 	return (
 		<>
-			<tr className={twMerge("border-b-0 border-t-2 border-t-base-200 print:text-sm", deleting && "hidden", (log.saving || isPending) && "opacity-40")}>
+			<tr className={twMerge("border-b-0 border-t-2 border-t-base-200 print:text-sm", deleting && "hidden")}>
 				<td
 					className={twMerge(
 						"!static pb-0 align-top print:p-2 sm:pb-3",
@@ -674,7 +675,8 @@ const CharacterLogRow = ({
 										startTransition(async () => {
 											try {
 												const result = await deleteLog(log.id);
-												if (result.error) throw new Error(result.error);
+												if (result.error == "Log not found") {
+												} else if (result.error) throw new Error(result.error);
 											} catch (error) {
 												if (error instanceof Error) alert(error.message);
 												else alert("Something went wrong while deleting the log.");
@@ -690,9 +692,7 @@ const CharacterLogRow = ({
 			</tr>
 			{(log.description?.trim() || log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && (
 				<tr className={twMerge(!descriptions && "hidden print:table-row")}>
-					<td
-						colSpan={100}
-						className={twMerge("max-w-[calc(100vw_-_50px)] whitespace-pre-wrap pt-0 text-sm print:p-2 print:text-xs", log.saving && "bg-neutral-focus")}>
+					<td colSpan={100} className={twMerge("max-w-[calc(100vw_-_50px)] whitespace-pre-wrap pt-0 text-sm print:p-2 print:text-xs")}>
 						<h4 className="text-base font-semibold">Notes:</h4>
 						<Markdown>{log.description || ""}</Markdown>
 						{(log.story_awards_gained.length > 0 || log.story_awards_lost.length > 0) && (
@@ -712,6 +712,7 @@ const CharacterLogRow = ({
 					</td>
 				</tr>
 			)}
+			{deleting && <PageLoader state={true} />}
 		</>
 	);
 };
