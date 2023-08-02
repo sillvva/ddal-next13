@@ -20,7 +20,6 @@ import type { SaveDMResult } from "$src/server/actions/dm";
 import type { CharacterData, CharactersData } from "$src/server/db/characters";
 import type { LogData } from "$src/server/db/log";
 import type { UserDMWithLogs } from "$src/server/db/dms";
-
 export function EditCharacterForm({
 	id,
 	character,
@@ -337,7 +336,7 @@ export function EditCharacterLogForm({
 				<div className="alert alert-error shadow-lg">
 					<div>
 						<Icon path={mdiAlertCircle} size={1} />
-						<span>Error! Task failed successfully. I mean... {mutError}</span>
+						<span>{mutError}</span>
 					</div>
 				</div>
 			)}
@@ -891,7 +890,7 @@ export function EditDMLogForm({
 				<div className="alert alert-error shadow-lg">
 					<div>
 						<Icon path={mdiAlertCircle} size={1} />
-						<span>Error! Task failed successfully. I mean... {mutError}</span>
+						<span>{mutError}</span>
 					</div>
 				</div>
 			)}
