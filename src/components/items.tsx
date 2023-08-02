@@ -27,8 +27,7 @@ export function Items({
 	const [modal, setModal] = useState<{ name: string; description: string; date?: Date } | null>(null);
 	const [collapsed, setCollapsed] = useState(collapsible);
 
-	const itemsMap = useMemo(() => new Map<string, number>(), []);
-
+	const isConsumable = useCallback((name: string) => name.trim().match(/^(\d+x? )?((Potion|Scroll|Spell Scroll|Charm|Elixir)s? of)/), []);
 	const sorterName = useCallback(
 		(name: string) =>
 			sort
@@ -40,55 +39,41 @@ export function Items({
 				: name,
 		[sort]
 	);
-	const isConsumable = useCallback((name: string) => name.trim().match(/^(\d+x? )?((Potion|Scroll|Spell Scroll|Charm|Elixir)s? of)/), []);
-	const itemQty = useCallback((item: { name: string }) => parseInt(item.name.match(/^(\d+)x? /)?.[1] || "1"), []);
-	const clearQty = useCallback((name: string) => name.replace(/^\d+x? ?/, ""), []);
 
-	const clonedItems = useMemo(() => structuredClone(items), [items]);
+	const consolidatedItems = useMemo(() => {
+		const itemsMap = new Map<string, number>();
+		const itemQty = (item: { name: string }) => parseInt(item?.name.match(/^(\d+)x? /)?.[1] || "1");
+		const clearQty = (name: string) => name.replace(/^\d+x? ?/, "");
 
-	const consolidatedItems = useMemo(
-		() =>
-			clonedItems
-				.map((item, index) => {
-					const name = clearQty(item.name);
-					const desc = item.description?.trim();
-					const key = `${name}_${desc}`;
-					const qty = itemQty(item);
-					const cons = isConsumable(sorterName(name));
+		return structuredClone(items).reduce((acc, item, index, arr) => {
+			const name = clearQty(item?.name);
+			const desc = item?.description?.trim();
+			const key = `${name}_${desc}`;
+			const qty = itemQty(item);
+			const cons = isConsumable(sorterName(name));
 
-					return {
-						name,
-						desc,
-						qty,
-						index,
-						cons,
-						key
-					};
-				})
-				.reduce((acc, { name, qty, key, index, cons }) => {
-					const existingIndex = itemsMap.get(key);
-					if (existingIndex && existingIndex >= 0) {
-						const existingQty = itemQty(acc[existingIndex]);
+			const existingIndex = itemsMap.get(key);
+			if (existingIndex && existingIndex >= 0 && acc[existingIndex]) {
+				const existingQty = itemQty(acc[existingIndex]);
 
-						const newQty = existingQty + qty;
-						let newName = name;
-						if (cons) newName = newName.replace(/^(\w+)s/, "$1");
+				const newQty = existingQty + qty;
+				let newName = name;
+				if (cons) newName = newName.replace(/^(\w+)s/, "$1");
 
-						if (newQty > 1) {
-							if (cons) newName = newName.replace(/^(\w+)( .+)$/, "$1s$2");
-							acc[existingIndex].name = `${newQty} ${newName}`;
-						} else {
-							acc[existingIndex].name = newName;
-						}
-					} else {
-						acc.push(clonedItems[index]);
-						itemsMap.set(key, acc.length - 1);
-					}
+				if (newQty > 1) {
+					if (cons) newName = newName.replace(/^(\w+)( .+)$/, "$1s$2");
+					acc[existingIndex].name = `${newQty} ${newName}`;
+				} else {
+					acc[existingIndex].name = newName;
+				}
+			} else {
+				itemsMap.set(key, acc.length);
+				acc.push(arr[index]);
+			}
 
-					return acc;
-				}, [] as typeof items),
-		[clonedItems, itemsMap, sorterName, itemQty, isConsumable, clearQty]
-	);
+			return acc;
+		}, [] as typeof items);
+	}, [items, sorterName, isConsumable]);
 
 	const sortedItems = useMemo(
 		() => (sort ? consolidatedItems.sort((a, b) => sorter(sorterName(a.name), sorterName(b.name))) : consolidatedItems),
