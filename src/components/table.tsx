@@ -772,6 +772,16 @@ export function DMLogTable({ logs, deleteLog }: { logs: (DMLogData[0] & { dateSt
 				<input type="text" placeholder="Search" onChange={e => setSearch(e.target.value)} className="input-bordered input input-sm w-full sm:max-w-xs" />
 			</div>
 
+			<div className="flex gap-4">
+				<a href="/dm-logs/new" className="btn-primary btn-sm btn hidden sm:inline-flex" aria-label="New Log">
+					New Log
+				</a>
+				<input type="text" placeholder="Search" onChange={e => setSearch(e.target.value)} className="input-bordered input w-full sm:input-sm sm:max-w-xs" />
+				<a href="/dm-logs/new" className="btn-primary btn inline-flex sm:hidden" aria-label="New Log">
+					<Icon path={mdiPlus} className="inline w-6" />
+				</a>
+			</div>
+
 			<section>
 				<div className="w-full overflow-x-auto rounded-lg bg-base-100">
 					<table className="table w-full">
@@ -974,18 +984,19 @@ const DMLogRow = ({
 				</td>
 				<td className="w-8 print:hidden">
 					<div className="flex flex-col justify-center gap-2">
-						<Link href={`/dm-logs/${log.id}`} className="btn-primary btn-sm btn">
+						<Link href={`/dm-logs/${log.id}`} className="btn-primary btn sm:btn-sm">
 							<Icon path={mdiPencil} size={0.8} />
 						</Link>
 						<button
-							className="btn-sm btn"
+							className="btn-danger btn sm:btn-sm"
 							onClick={e => {
 								if (confirm(`Are you sure you want to delete ${log.name}? This action cannot be reversed.`)) {
 									setDeleting(true);
 									startTransition(async () => {
 										try {
 											const result = await deleteLog(log);
-											if (result.error) throw new Error(result.error);
+											if (result.error === "Log not found") {
+											} else if (result.error) throw new Error(result.error);
 										} catch (error) {
 											if (error instanceof Error) alert(error.message);
 											else alert("Something went wrong while deleting the log.");
@@ -1073,12 +1084,12 @@ const DMTableRow = ({ dm, deleteDM }: { dm: UserDMsWithLogs[0]; deleteDM: (dm: U
 			<td>{dm.logs.length}</td>
 			<td className="w-16 print:hidden">
 				<div className="flex flex-row justify-center gap-2">
-					<Link href={`/dms/${dm.id}`} className="btn-primary btn-sm btn">
+					<Link href={`/dms/${dm.id}`} className="btn-primary btn sm:btn-sm">
 						<Icon path={mdiPencil} size={0.8} />
 					</Link>
 					{dm.logs.length == 0 && (
 						<button
-							className="btn-sm btn"
+							className="btn-danger btn sm:btn-sm"
 							onClick={async () => {
 								if (confirm(`Are you sure you want to delete ${dm.name}? This action cannot be reversed.`)) {
 									setDeleting(true);
