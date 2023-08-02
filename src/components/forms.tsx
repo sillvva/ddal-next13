@@ -1,15 +1,14 @@
 "use client";
 
 import { getMagicItems, getStoryAwards } from "$src/lib/entities";
-import { formatDate } from "$src/lib/utils";
+import { formatDate, sorter } from "$src/lib/utils";
 import { dungeonMasterSchema, logSchema, newCharacterSchema, valibotResolver } from "$src/types/schemas";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { twMerge } from "tailwind-merge";
 import { flatten, safeParse } from "valibot";
 import { mdiAlertCircle, mdiTrashCan } from "@mdi/js";
 import Icon from "@mdi/react";
-import AutoFillSelect from "./autofill";
 import AutoResizeTextArea from "./textarea";
 
 import type { DungeonMasterSchema, LogSchema, NewCharacterSchema } from "$src/types/schemas";
@@ -20,6 +19,8 @@ import type { SaveDMResult } from "$src/server/actions/dm";
 import type { CharacterData, CharactersData } from "$src/server/db/characters";
 import type { LogData } from "$src/server/db/log";
 import type { UserDMWithLogs } from "$src/server/db/dms";
+import type { DetailedHTMLProps, InputHTMLAttributes } from "react";
+
 export function EditCharacterForm({
 	id,
 	character,
@@ -217,6 +218,9 @@ export function EditCharacterLogForm({
 		[log, character.id]
 	);
 
+	const defaultDM = { id: "", name: "", DCI: null, uid: "" };
+	let [dm, setDM] = useState(selectedLog.dm || defaultDM);
+
 	const [date, setDate] = useState(selectedLog.date);
 	const [season, setSeason] = useState<1 | 8 | 9>(selectedLog.experience ? 1 : selectedLog.acp ? 8 : 9);
 	const [type, setType] = useState<LogType>(selectedLog.type || "game");
@@ -246,10 +250,11 @@ export function EditCharacterLogForm({
 	const addLostStoryAward = () => setStoryAwardsLost([...storyAwardsLost, storyAwards[0]?.id || ""]);
 	const removeLostStoryAward = (index: number) => setStoryAwardsLost(storyAwardsLost.filter((_, i) => i !== index));
 
-	const setDM = (dm?: DungeonMaster) => {
+	const setDMFields = (dm?: DungeonMaster) => {
 		form.setValue("dm.id", dm?.id || "");
 		form.setValue("dm.name", dm?.name || "");
 		form.setValue("dm.DCI", dm?.DCI || null);
+		setDM({ ...defaultDM, ...dm });
 	};
 
 	const submitHandler = (e: React.FormEvent<HTMLFormElement>) => {
@@ -412,15 +417,19 @@ export function EditCharacterLogForm({
 											<label className="label">
 												<span className="label-text">DM Name</span>
 											</label>
-											<AutoFillSelect
+											<ComboBox
 												type="text"
+												values={dms?.map(dm => ({ key: dm.name, value: dm.name + (dm.DCI ? ` (${dm.DCI})` : "") })) || []}
 												inputProps={form.register("dm.name", {
-													value: selectedLog.dm?.name || "",
+													value: dm.name,
 													disabled: saving
 												})}
-												values={dms?.map(dm => ({ key: dm.name, value: dm.name + (dm.DCI ? ` (${dm.DCI})` : "") })) || []}
-												onSelect={val => {
-													setDM(dms?.find(dm => dm.name === val));
+												onSelect={ev => {
+													if (ev) {
+														const updated = dms?.find(dm => dm.name === ev);
+														if (updated) setDMFields(updated);
+														else setDMFields({ ...(dm.name ? dm : defaultDM), name: ev.toString().trim() });
+													} else setDMFields(defaultDM);
 												}}
 											/>
 											<label className="label">
@@ -431,15 +440,19 @@ export function EditCharacterLogForm({
 											<label className="label">
 												<span className="label-text">DM DCI</span>
 											</label>
-											<AutoFillSelect
+											<ComboBox
 												type="number"
 												inputProps={form.register("dm.DCI", {
-													value: selectedLog.dm?.DCI || null,
+													value: dm.DCI,
 													disabled: saving
 												})}
 												values={dms?.map(dm => ({ key: dm.DCI, value: dm.name + (dm.DCI ? ` (${dm.DCI})` : "") })) || []}
-												onSelect={val => {
-													setDM(dms?.find(dm => dm.DCI === val));
+												onSelect={ev => {
+													if (ev) {
+														const updated = dms?.find(dm => dm.DCI === ev);
+														if (updated) setDMFields(updated);
+														else setDMFields({ ...(dm.name ? dm : defaultDM), DCI: ev.toString().trim() });
+													} else setDMFields({ ...(dm.name ? dm : defaultDM), DCI: null });
 												}}
 											/>
 											<label className="label">
@@ -947,7 +960,7 @@ export function EditDMLogForm({
 								{!!form.watch().applied_date && <span className="text-error">*</span>}
 							</span>
 						</label>
-						<AutoFillSelect
+						<ComboBox
 							type="text"
 							inputProps={form.register("characterName", {
 								value: characters.find(c => c.id === log.characterId)?.name || "",
@@ -1306,5 +1319,130 @@ export function EditDMForm({ dm, saveDM }: { dm: Exclude<UserDMWithLogs, null>; 
 				</div>
 			</div>
 		</form>
+	);
+}
+
+export default function ComboBox({
+	type,
+	values,
+	inputProps,
+	onSelect,
+	searchBy = "key"
+}: {
+	type: "text" | "number";
+	values: { key?: string | number | null; value: string }[];
+	inputProps: DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
+	onSelect: (value: string | number) => void;
+	searchBy?: "key" | "value";
+}) {
+	const [keySel, setKeySel] = useState<number>(0);
+	const [search, setSearch] = useState(inputProps.value?.toString() || "");
+	const [selected, setSelected] = useState(false);
+
+	const parsedValues = useMemo(() => values.map(v => ({ key: v.key ?? "", value: v.value })).filter(v => v.key !== null), [values]);
+
+	const matches = useMemo(
+		() =>
+			parsedValues && parsedValues.length > 0 && search.trim()
+				? parsedValues
+						.filter(v => `${searchBy == "key" ? v.key : v.value}`.toLowerCase().includes(search.toLowerCase()))
+						.sort((a, b) => sorter(a.value, b.value))
+				: [],
+		[parsedValues, search, searchBy]
+	);
+
+	useEffect(() => {
+		setSelected(matches.length === 1);
+	}, []);
+
+	const selectHandler = useCallback(
+		(key: number) => {
+			const match = matches[key];
+			onSelect(match?.key || "");
+			setKeySel(match ? key : 0);
+			setSelected(!!match);
+			setSearch("");
+		},
+		[matches, onSelect]
+	);
+
+	const selectNew = useCallback(
+		(value: string) => {
+			onSelect(value);
+			setSelected(true);
+			setSearch("");
+		},
+		[onSelect]
+	);
+
+	return (
+		<div className="dropdown">
+			<label>
+				<input
+					type={type}
+					{...inputProps}
+					onChange={e => {
+						setSelected(false);
+						setKeySel(0);
+						setSearch(e.currentTarget.value);
+						if (inputProps.onChange) inputProps.onChange(e);
+					}}
+					onKeyDown={e => {
+						if (!parsedValues.length || !search.trim()) return;
+						if (e.code === "ArrowDown") {
+							e.preventDefault();
+							if (selected) return false;
+							setKeySel(keySel + 1);
+							if (keySel >= matches.length) setKeySel(0);
+							return false;
+						}
+						if (e.code === "ArrowUp") {
+							e.preventDefault();
+							if (selected) return false;
+							setKeySel(keySel - 1);
+							if (keySel < 0) setKeySel(matches.length - 1);
+							return false;
+						}
+						if (e.code === "Enter" || e.code === "Tab") {
+							e.preventDefault();
+							if (selected) return false;
+							if (matches.length) selectHandler(keySel);
+							else selectNew(search);
+						}
+						if (e.code === "Escape") {
+							e.preventDefault();
+							if (selected) return false;
+							selectHandler(-1);
+							return false;
+						}
+					}}
+					onFocus={e => {
+						if (inputProps.onFocus) inputProps.onFocus(e);
+					}}
+					onBlur={e => {
+						if (!selected) {
+							if (search.trim()) {
+								const match = matches.findIndex(v => v[searchBy].toString().toLowerCase() === e.currentTarget.value.toLowerCase());
+								if (match >= 0) selectHandler(match);
+								else selectNew(search.trim());
+							} else selectNew(search.trim());
+						}
+						if (inputProps.onBlur) inputProps.onBlur(e);
+					}}
+					className="input-bordered input w-full focus:border-primary"
+				/>
+			</label>
+			{parsedValues && parsedValues.length > 0 && search.trim() && !selected && (
+				<ul id={`options-${inputProps.name}`} className="dropdown-content menu w-full rounded-lg bg-base-100 p-2 shadow dark:bg-base-200">
+					{matches.slice(0, 8).map((kv, i) => (
+						<li key={i} className={twMerge("hover:bg-primary/50", keySel === i && "bg-primary text-primary-content")}>
+							<span className="rounded-none px-4 py-2" role="option" tabIndex={0} aria-selected={keySel === i} onMouseDown={() => selectHandler(i)}>
+								{kv.value}
+							</span>
+						</li>
+					))}
+				</ul>
+			)}
+		</div>
 	);
 }
