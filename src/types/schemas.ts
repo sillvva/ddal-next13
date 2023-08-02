@@ -1,10 +1,9 @@
-import { Resolver } from "react-hook-form";
+import type { Resolver } from "react-hook-form";
 import {
 	array,
 	boolean,
 	date,
 	flatten,
-	isoTimestamp,
 	literal,
 	merge,
 	minLength,
@@ -24,7 +23,8 @@ import {
 	useDefault as def
 } from "valibot";
 
-export const dateSchema = union([date(), string([isoTimestamp()])]);
+const dateRegex = /^\d{4}-(0[1-9]|1[0-2])-([12]\d|0[1-9]|3[01])T(0[0-9]|1\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}Z$/;
+export const dateSchema = union([date(), string([regex(dateRegex)])], "Invalid Date Format");
 
 export type DungeonMasterSchema = Output<typeof dungeonMasterSchema>;
 export const dungeonMasterSchema = object({
@@ -96,10 +96,10 @@ export const editCharacterSchema = merge([object({ id: string() }), newCharacter
 
 export const valibotResolver = <T extends ObjectShape>(schema: ObjectSchema<T>) => {
 	return (async values => {
-		const parsedValues = safeParse(schema, values);
+		const parsedResult = safeParse(schema, values);
 
-		if (!parsedValues.success) {
-			const errors = flatten(parsedValues.error);
+		if (!parsedResult.success) {
+			const errors = flatten(parsedResult.error);
 			return {
 				values,
 				errors: Object.fromEntries(Object.entries(errors.nested).map(([key, value]) => [key, { message: value?.join(", ") }]))
@@ -107,7 +107,7 @@ export const valibotResolver = <T extends ObjectShape>(schema: ObjectSchema<T>) 
 		}
 
 		return {
-			values: parsedValues.data,
+			values: parsedResult.data,
 			errors: {}
 		};
 	}) satisfies Resolver<Output<typeof schema>>;
