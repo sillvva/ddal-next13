@@ -55,7 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 								</>
 							)}
 							<div className="flex-1">&nbsp;</div>
-							<a href="https://github.com/sillvva/ddal-svelte" target="_blank" rel="noreferrer noopener" className="hidden items-center p-2 lg:flex">
+							<a href="https://github.com/sillvva/ddal-next13" target="_blank" rel="noreferrer noopener" className="hidden items-center p-2 lg:flex">
 								<Icon path={mdiGithub} className="w-6" />
 							</a>
 							<a href="http://paypal.me/Sillvva" target="_blank" rel="noreferrer noopener" className="hidden items-center p-2 lg:flex">
