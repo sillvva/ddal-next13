@@ -12,6 +12,7 @@ import { redirect } from "next/navigation";
 
 import type { LogSchema } from "$src/types/schemas";
 import type { Metadata } from "next";
+
 export default async function Page({ params: { characterId, logId } }: { params: { characterId: string; logId: string } }) {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");

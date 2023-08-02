@@ -12,7 +12,6 @@ import { getCharacterCache } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { mdiDotsHorizontal } from "@mdi/js";

@@ -8,9 +8,9 @@ import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
+
 export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");

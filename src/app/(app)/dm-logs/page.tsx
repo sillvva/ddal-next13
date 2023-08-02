@@ -5,7 +5,7 @@ import { appMeta } from "$src/lib/meta";
 import { deleteLog } from "$src/server/actions/log";
 import { DMLogData, getDMLogsCache } from "$src/server/db/log";
 import { getServerSession } from "next-auth";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -26,11 +26,10 @@ export default async function Page() {
 		"use server";
 		const result = await deleteLog(log.id, session?.user?.id);
 		if (result.id) {
-			revalidatePath(`/dm-logs/${result.id}`);
-			revalidatePath("/dm-logs");
+			revalidateTag(`dm-logs-${session?.user?.id}`);
+			revalidateTag(`log-${result.id}`);
 			if (log.characterId) {
-				revalidatePath(`/characters/${log.characterId}`);
-				revalidatePath("/characters");
+				revalidateTag(`character-${log.characterId}`);
 			}
 		}
 		return result;
