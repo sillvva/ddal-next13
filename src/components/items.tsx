@@ -1,11 +1,11 @@
 "use client";
 
-import { Markdown } from "$src/components/markdown";
 import { sorter } from "$src/lib/utils";
 import { useCallback, useMemo, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { mdiChevronDown, mdiChevronUp } from "@mdi/js";
 import Icon from "@mdi/react";
+import { Modal } from "./portals";
 import { SearchResults } from "./search";
 
 import type { MagicItem, StoryAward } from "@prisma/client";
@@ -110,15 +110,7 @@ export function Items({
 						: "None"}
 				</p>
 			</div>
-			<div className={twMerge("modal cursor-pointer", modal && "modal-open")} onClick={() => setModal(null)}>
-				{modal && (
-					<div className="modal-box relative cursor-default drop-shadow-lg" onClick={e => e.stopPropagation()}>
-						<h3 className="cursor-text text-lg font-bold text-accent-content">{modal.name}</h3>
-						{modal.date && <p className="text-xs">{modal.date.toLocaleString()}</p>}
-						<Markdown className="cursor-text whitespace-pre-wrap pt-4 text-xs sm:text-sm">{modal.description}</Markdown>
-					</div>
-				)}
-			</div>
+			<Modal modal={modal} closeModal={() => setModal(null)} />
 		</>
 	);
 }

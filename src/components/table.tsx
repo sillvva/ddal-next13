@@ -14,7 +14,7 @@ import Icon from "@mdi/react";
 import { LazyImage } from "./images";
 import { Items } from "./items";
 import { Markdown } from "./markdown";
-import { PageLoader } from "./portals";
+import { Modal, PageLoader } from "./portals";
 import { SearchResults } from "./search";
 
 import type { CharacterData } from "$src/server/db/characters";
@@ -471,19 +471,7 @@ export function CharacterLogTable({
 				</div>
 			</section>
 
-			<div className={twMerge("modal cursor-pointer", modal && "modal-open")} onClick={() => setModal(null)}>
-				{modal && (
-					<div className="modal-box relative cursor-default drop-shadow-lg" onClick={e => e.stopPropagation()}>
-						<h3 className="cursor-text text-lg font-bold text-accent-content">{modal.name}</h3>
-						{modal.date && (
-							<p className="cursor-text text-xs" suppressHydrationWarning>
-								{modal.date.toLocaleString()}
-							</p>
-						)}
-						<Markdown className="cursor-text whitespace-pre-wrap pt-4 text-xs sm:text-sm">{modal.description}</Markdown>
-					</div>
-				)}
-			</div>
+			<Modal modal={modal} closeModal={() => setModal(null)} />
 		</>
 	);
 }
@@ -822,19 +810,7 @@ export function DMLogTable({ logs, deleteLog }: { logs: (DMLogData[0] & { dateSt
 					</table>
 				</div>
 
-				<label className={twMerge("modal cursor-pointer", modal && "modal-open")} onClick={() => setModal(null)}>
-					{modal && (
-						<label className="modal-box relative">
-							<h3 className="text-lg font-bold text-accent-content">{modal.name}</h3>
-							{modal.date && (
-								<p className="text-xs" suppressHydrationWarning>
-									{modal.date.toLocaleString()}
-								</p>
-							)}
-							<Markdown className="whitespace-pre-wrap pt-4 text-xs sm:text-sm">{modal.description}</Markdown>
-						</label>
-					)}
-				</label>
+				<Modal modal={modal} closeModal={() => setModal(null)} />
 			</section>
 		</>
 	);
