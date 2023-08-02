@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { mdiHome } from "@mdi/js";
 import Icon from "@mdi/react";
 
@@ -16,9 +17,9 @@ export function BreadCrumbs({ crumbs }: { crumbs: { name: string; href?: string 
 				{items.map(bc =>
 					bc.href ? (
 						<li key={bc.name}>
-							<a href={bc.href} className="text-secondary">
+							<Link href={bc.href} className="text-secondary">
 								{bc.name}
-							</a>
+							</Link>
 						</li>
 					) : (
 						<li className="overflow-hidden text-ellipsis whitespace-nowrap dark:drop-shadow-md" key={bc.name}>
