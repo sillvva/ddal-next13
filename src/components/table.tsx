@@ -532,7 +532,7 @@ const CharacterLogRow = ({
 						tabIndex={0}>
 						<SearchResults text={log.name} search={search} />
 					</div>
-					<p className="text-netural-content mb-2 whitespace-nowrap text-xs font-normal">
+					<p className="text-netural-content mb-2 whitespace-nowrap text-xs font-normal" suppressHydrationWarning>
 						{new Date(log.is_dm_log && log.applied_date ? log.applied_date : log.date).toLocaleString()}
 					</p>
 					{log.dm && log.type === "game" && log.dm.uid !== userId && (
@@ -576,7 +576,7 @@ const CharacterLogRow = ({
 							</p>
 						)}
 						{log.gold !== 0 && (
-							<p>
+							<p suppressHydrationWarning>
 								<span className="font-semibold">Gold:</span> {log.gold.toLocaleString("en-US")}
 							</p>
 						)}
@@ -621,7 +621,7 @@ const CharacterLogRow = ({
 						</p>
 					)}
 					{log.gold !== 0 && (
-						<p>
+						<p suppressHydrationWarning>
 							<span className="font-semibold">Gold:</span> {log.gold.toLocaleString("en-US")}
 						</p>
 					)}
@@ -815,7 +815,11 @@ export function DMLogTable({ logs, deleteLog }: { logs: (DMLogData[0] & { dateSt
 					{modal && (
 						<label className="modal-box relative">
 							<h3 className="text-lg font-bold text-accent-content">{modal.name}</h3>
-							{modal.date && <p className="text-xs">{modal.date.toLocaleString()}</p>}
+							{modal.date && (
+								<p className="text-xs" suppressHydrationWarning>
+									{modal.date.toLocaleString()}
+								</p>
+							)}
 							<Markdown className="whitespace-pre-wrap pt-4 text-xs sm:text-sm">{modal.description}</Markdown>
 						</label>
 					)}
@@ -896,7 +900,7 @@ const DMLogRow = ({
 							</p>
 						)}
 						{log.gold !== 0 && (
-							<p>
+							<p suppressHydrationWarning>
 								<span className="font-semibold">Gold:</span> {log.gold.toLocaleString("en-US")}
 							</p>
 						)}
@@ -946,7 +950,7 @@ const DMLogRow = ({
 						</p>
 					)}
 					{log.gold !== 0 && (
-						<p>
+						<p suppressHydrationWarning>
 							<span className="font-semibold">Gold:</span> {log.gold.toLocaleString("en-US")}
 						</p>
 					)}
