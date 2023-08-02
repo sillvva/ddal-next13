@@ -1,27 +1,22 @@
+import { BreadCrumbs } from "$src/components/breadcrumbs";
 import { EditDMLogForm } from "$src/components/forms";
 import { authOptions } from "$src/lib/auth";
 import { appMeta } from "$src/lib/meta";
 import { saveLog } from "$src/server/actions/log";
-import { getCharacters } from "$src/server/db/characters";
-import { getLog } from "$src/server/db/log";
-import { logSchema } from "$src/types/zod-schema";
+import { getCharactersCache } from "$src/server/db/characters";
+import { getLogCache } from "$src/server/db/log";
 import { getServerSession } from "next-auth";
-import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
-import Link from "next/link";
+import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { z } from "zod";
-import { mdiHome } from "@mdi/js";
-import Icon from "@mdi/react";
 
+import type { LogSchema } from "$src/types/schemas";
 import type { LogType } from "@prisma/client";
 import type { Metadata } from "next";
-
 export default async function Page({ params: { logId } }: { params: { logId: string } }) {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
 
-	let log = await getLog(logId);
+	let log = await getLogCache(logId, true);
 	if (logId !== "new" && !log) throw redirect(`/dm-logs`);
 
 	log = log
@@ -60,25 +55,18 @@ export default async function Page({ params: { logId } }: { params: { logId: str
 				story_awards_lost: []
 		  };
 
-	const characters = (await getCharacters(session.user.id)).map(c => ({
-		...c,
-		logs: c.logs.map(l => ({
-			...l,
-			saving: false
-		}))
-	}));
+	const characters = await getCharactersCache(session.user.id);
 
-	const actionSaveLog = async (data: z.infer<typeof logSchema>) => {
+	const actionSaveLog = async (data: LogSchema) => {
 		"use server";
 		const characterId = data.characterId;
-		const result = await saveLog(characterId, logId, data, session?.user);
+		const result = await saveLog(data, session?.user);
 		if (result?.id) {
-			revalidatePath("/dm-logs");
-			revalidatePath(`/dm-logs/${result.id}`);
+			revalidateTag(`dm-logs-${session?.user?.id}`);
+			revalidateTag(`dm-log-${result.id}`);
 			if (characterId) {
-				revalidatePath("/characters");
-				revalidatePath(`/characters/${characterId}`);
-				revalidatePath(`/characters/${characterId}/log/${result.id}`);
+				revalidateTag(`characters-${session?.user?.id}`);
+				revalidateTag(`character-${characterId}`);
 			}
 			redirect(`/dm-logs`);
 		}
@@ -87,34 +75,12 @@ export default async function Page({ params: { logId } }: { params: { logId: str
 
 	return (
 		<>
-			<div className="breadcrumbs mb-4 text-sm">
-				<ul>
-					<li>
-						<Icon path={mdiHome} className="w-4" />
-					</li>
-					<li>
-						<Link href="/dm-logs" className="text-secondary">
-							DM Logs
-						</Link>
-					</li>
-					{logId !== "new" ? (
-						<li className="overflow-hidden text-ellipsis whitespace-nowrap dark:drop-shadow-md">{log.name}</li>
-					) : (
-						<li className="dark:drop-shadow-md">New Log</li>
-					)}
-				</ul>
-			</div>
-
+			<BreadCrumbs crumbs={[{ name: "DM Logs", href: "/dm-logs" }, { name: logId === "new" ? "New Log" : log.name }]} />
 			<EditDMLogForm id={logId} log={log} characters={characters} saveLog={actionSaveLog} />
 		</>
 	);
 }
 
 export async function generateMetadata({ params: { logId } }: { params: { logId: string } }): Promise<Metadata> {
-	const headersList = headers();
-	const domain = headersList.get("host") || "";
-	const fullUrl = headersList.get("referer") || "";
-	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
-
-	return appMeta(path, `${logId === "new" ? "New" : "Edit"} Log - Adventurers League Log Sheet`);
+	return appMeta(`${logId === "new" ? "New" : "Edit"} Log - Adventurers League Log Sheet`);
 }

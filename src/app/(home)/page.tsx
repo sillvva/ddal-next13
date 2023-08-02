@@ -27,10 +27,5 @@ export default async function Home() {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-	const headersList = headers();
-	const domain = headersList.get("host") || "";
-	const fullUrl = headersList.get("referer") || "";
-	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
-
-	return appMeta(path, `Adventurers League Log Sheet`);
+	return appMeta(`Adventurers League Log Sheet`);
 }

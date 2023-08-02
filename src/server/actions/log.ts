@@ -1,18 +1,25 @@
 "use server";
 
-import { parseError } from "$src/lib/misc";
-import { logSchema } from "$src/types/zod-schema";
-import { User } from "next-auth";
-import { z } from "zod";
-import { DungeonMaster, Log } from "@prisma/client";
-import { getLevels } from "../db/characters";
+import { getLevels } from "$src/lib/entities";
+import { parseError } from "$src/lib/utils";
 import { prisma } from "../db/client";
 
+import type { User } from "next-auth";
+import type { DungeonMaster, Log } from "@prisma/client";
+import type { LogSchema } from "$src/types/schemas";
+
 export type SaveLogResult = ReturnType<typeof saveLog>;
-export async function saveLog(characterId: string, logId: string, input: z.infer<typeof logSchema>, user?: User) {
+export async function saveLog(input: LogSchema, user?: User) {
 	try {
 		let dm: DungeonMaster | null = null;
-		if (!user) throw new Error("Not authenticated");
+		if (!user?.name) throw new Error("Not authenticated");
+
+		if (!input.dm.name.trim()) {
+			input.dm.uid = user.id;
+			input.dm.name = user.name;
+			input.dm.DCI = null;
+		}
+
 		const isMe = input.dm?.name.trim() === user.name?.trim();
 
 		const log = await prisma.$transaction(async tx => {
@@ -57,7 +64,7 @@ export async function saveLog(characterId: string, logId: string, input: z.infer
 
 			if (input.type == "game" && !dm?.id) throw new Error("Could not save Dungeon Master");
 
-			let applied_date: Date | null = input.is_dm_log
+			const applied_date: Date | null = input.is_dm_log
 				? input.characterId && input.applied_date !== null
 					? new Date(input.applied_date)
 					: null
@@ -75,9 +82,9 @@ export async function saveLog(characterId: string, logId: string, input: z.infer
 				if (!character) throw new Error("Character not found");
 
 				const currentLevel = getLevels(character.logs).total;
-				const logACP = character.logs.find(log => log.id === input.logId)?.acp || 0;
+				const logACP = character.logs.find(log => log.id === input.id)?.acp || 0;
 				if (currentLevel == 20 && input.acp - logACP > 0) throw new Error("Character is already level 20");
-				const logLevel = character.logs.find(log => log.id === input.logId)?.level || 0;
+				const logLevel = character.logs.find(log => log.id === input.id)?.level || 0;
 				if (currentLevel + input.level - logLevel > 20) throw new Error("Character cannot level past 20");
 			}
 
@@ -100,7 +107,7 @@ export async function saveLog(characterId: string, logId: string, input: z.infer
 
 			const log: Log = await tx.log.upsert({
 				where: {
-					id: input.logId
+					id: input.id
 				},
 				update: data,
 				create: data
@@ -129,7 +136,7 @@ export async function saveLog(characterId: string, logId: string, input: z.infer
 					}))
 			});
 
-			for (let item of itemsToUpdate) {
+			for (const item of itemsToUpdate) {
 				await tx.magicItem.update({
 					where: {
 						id: item.id
@@ -185,7 +192,7 @@ export async function saveLog(characterId: string, logId: string, input: z.infer
 					}))
 			});
 
-			for (let item of storyAwardsToUpdate) {
+			for (const item of storyAwardsToUpdate) {
 				await tx.storyAward.update({
 					where: {
 						id: item.id
@@ -237,17 +244,18 @@ export async function saveLog(characterId: string, logId: string, input: z.infer
 
 		return log
 			? {
-					...log,
-					error: null,
-					saving: true
+					id: log.id,
+					log,
+					error: null
 			  }
 			: {
 					id: null,
+					log: null,
 					error: "Could not save log"
 			  };
 	} catch (error) {
-		if (error instanceof Error) return { id: null, error: error.message };
-		else return { id: null, error: "An unknown error has occurred." };
+		if (error instanceof Error) return { id: null, log: null, error: error.message };
+		else return { id: null, log: null, error: "An unknown error has occurred." };
 	}
 }
 
@@ -265,8 +273,8 @@ export async function deleteLog(logId: string, userId?: string) {
 					character: true
 				}
 			});
-			if (log?.character && log.character.userId !== userId) throw new Error("Not authorized");
-			else if (log?.dm && log.dm.uid !== userId) throw new Error("Not authorized");
+			if (!log) throw new Error("Log not found");
+			if (log.character?.userId !== userId && log.dm?.uid !== userId) throw new Error("Not authorized");
 			await tx.magicItem.updateMany({
 				where: {
 					logLostId: logId
@@ -293,16 +301,17 @@ export async function deleteLog(logId: string, userId?: string) {
 					logGainedId: logId
 				}
 			});
-			await tx.log.delete({
-				where: {
-					id: logId
-				}
-			});
+			if (log)
+				await tx.log.delete({
+					where: {
+						id: logId
+					}
+				});
 			return log;
 		});
 		return { id: result?.id || null, error: null };
 	} catch (error) {
 		if (error instanceof Error) return { id: null, error: error.message };
-		else return { id: null, error: "Unknown error" };
+		else return { id: null, error: "An unknown error has occurred." };
 	}
 }

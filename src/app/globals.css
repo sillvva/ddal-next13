@@ -3,57 +3,96 @@
 @tailwind utilities;
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-  }
+	:root {
+		color-scheme: dark;
+	}
 }
 
 @font-face {
-  font-family: "Draconis";
-  src: url("/fonts/Draconis.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
+	font-family: "Draconis";
+	src: url("/fonts/Draconis.ttf") format("truetype");
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
 }
 
 @font-face {
-  font-family: "Vecna";
-  src: url("/fonts/Vecna.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
+	font-family: "Vecna";
+	src: url("/fonts/Vecna.ttf") format("truetype");
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
 }
 
 @font-face {
-  font-family: "Vecna";
-  src: url("/fonts/VecnaBold.ttf") format("truetype");
-  font-weight: bold;
-  font-style: normal;
-  font-display: swap;
+	font-family: "Vecna";
+	src: url("/fonts/VecnaBold.ttf") format("truetype");
+	font-weight: bold;
+	font-style: normal;
+	font-display: swap;
 }
 
 @layer base {
-  body {
-    overflow-x: hidden;
-    overflow-y: scroll;
-  }
-  thead {
-    display: table-row-group;
-  }
+	body {
+		overflow-x: hidden;
+		overflow-y: scroll;
+	}
+	thead {
+		display: table-row-group;
+	}
 }
 
 @layer utilities {
-  .text-accent-content {
-    @apply print:text-gray-700;
-  }
-  .text-secondary {
-    --tw-drop-shadow: drop-shadow(0 4px 3px rgb(0 0 0 / 0.2)) drop-shadow(0 1px 1px rgb(0 0 0 / 1));
-    @apply print:drop-shadow-none;
-  }
+	.text-accent-content {
+		@apply print:text-gray-700;
+	}
+	.text-secondary {
+		--tw-drop-shadow: drop-shadow(0 4px 3px rgb(0 0 0 / 0.2)) drop-shadow(0 1px 1px rgb(0 0 0 / 1));
+		@apply print:drop-shadow-none;
+	}
+	.btn {
+		@apply bg-base-100 text-base-content;
+	}
+	.btn-primary {
+		@apply bg-primary text-white;
+	}
+	.btn-delete {
+		@apply bg-red-800 text-white hover:bg-red-900;
+	}
+	.grid-characters {
+		grid-template-columns: auto 1fr auto auto auto;
+	}
+	.grid-characters-mobile {
+		grid-template-columns: 1fr;
+	}
+	.grid-characters-mobile-sm {
+		grid-template-columns: 1fr auto auto auto;
+	}
 }
 
 @layer components {
-  .img-grow:hover img {
-    @apply motion-safe:scale-125 transition-transform;
-  }
+	.img-grow:hover img {
+		@apply transition-transform motion-safe:scale-125;
+	}
+	.grid-table {
+		@apply grid w-full text-left text-sm;
+	}
+	.grid-table :where(header, section, a):not(:first-child, :last-child) > * {
+		@apply border-b-[1px] border-b-base-200;
+	}
+	.grid-table header {
+		@apply contents whitespace-nowrap text-xs font-bold text-base-content text-opacity-60;
+	}
+	.grid-table :where(section, a) {
+		@apply contents;
+	}
+	.grid-table :where(header, section, a) > * {
+		@apply px-4 py-3 align-middle;
+	}
+	.grid-table header > * {
+		@apply bg-base-300;
+	}
+	.grid-table :where(section, a) > * {
+		@apply items-center bg-base-100;
+	}
 }

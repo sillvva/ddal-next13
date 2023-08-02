@@ -1,10 +1,12 @@
 "use client";
-import { DeleteDMResult } from "$src/server/actions/dm";
+import { redirect } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { PageLoader } from "./portals";
 
 import type { DeleteCharacterResult } from "$src/server/actions/character";
-export function DeleteCharacter({ characterId, deleteCharacter }: { characterId: string; deleteCharacter: (characterId: string) => DeleteCharacterResult }) {
+import type { DeleteDMResult } from "$src/server/actions/dm";
+
+export function DeleteCharacter({ deleteCharacter }: { deleteCharacter: () => DeleteCharacterResult }) {
 	const [isPending, startTransition] = useTransition();
 	const [deleting, setDeleting] = useState(false);
 
@@ -22,7 +24,10 @@ export function DeleteCharacter({ characterId, deleteCharacter }: { characterId:
 					if (confirm("Are you sure you want to delete this character? This action cannot be undone.")) {
 						setDeleting(true);
 						startTransition(async () => {
-							const result = await deleteCharacter(characterId);
+							const result = await deleteCharacter();
+							if (result.id) {
+								redirect("/characters");
+							}
 							if (result.error) {
 								alert(result.error);
 								setDeleting(false);

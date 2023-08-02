@@ -1,17 +1,16 @@
+import { BreadCrumbs } from "$src/components/breadcrumbs";
 import { CharactersTable } from "$src/components/table";
 import { authOptions } from "$src/lib/auth";
-import { appMeta } from "$src/lib/meta";
+import { appMeta, isMobile } from "$src/lib/meta";
 import { getCookie } from "$src/lib/store";
-import { getCharacters } from "$src/server/db/characters";
+import { getCharacterCache, getCharactersCache } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
-import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { mdiDotsHorizontal, mdiHome, mdiPlus } from "@mdi/js";
+import { mdiDotsHorizontal } from "@mdi/js";
 import Icon from "@mdi/react";
 
 import type { Metadata } from "next";
+export type CharactersCookie = (typeof charactersCookieSchema)["defaults"];
 const charactersCookieSchema = {
 	name: "characters",
 	defaults: {
@@ -19,45 +18,30 @@ const charactersCookieSchema = {
 	}
 };
 
-export type CharactersCookie = (typeof charactersCookieSchema)["defaults"];
-
 export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session?.user) throw redirect("/");
 
-	const characters = await getCharacters(session.user.id);
+	const charactersData = await getCharactersCache(session.user.id);
+	const characterData = await Promise.all(charactersData.map(character => getCharacterCache(character.id)));
+	const characters = characterData.filter(Boolean);
+
 	const characterCookie = getCookie(charactersCookieSchema);
 
-	const actionRevalidate = async () => {
-		"use server";
-		revalidatePath(`/characters`);
-	};
+	const mobile = isMobile();
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div className="flex gap-4">
-				<div className="breadcrumbs text-sm">
-					<ul>
-						<li>
-							<Icon path={mdiHome} className="w-4" />
-						</li>
-						<li className="dark:drop-shadow-md">Characters</li>
-					</ul>
-				</div>
-				<div className="flex-1" />
-				{characters && characters.length > 0 && (
-					<Link href="/characters/new" className="btn-primary btn-sm btn">
-						<span className="hidden sm:inline">New Character</span>
-						<Icon path={mdiPlus} className="inline w-4 sm:hidden" />
-					</Link>
-				)}
+			<div className="hidden gap-4 sm:flex">
+				<BreadCrumbs crumbs={[{ name: "Characters" }]} />
+
 				<div className="dropdown-end dropdown">
-					<label tabIndex={1} className="btn-sm btn">
-						<Icon path={mdiDotsHorizontal} size={1} />
-					</label>
-					<ul tabIndex={1} className="dropdown-content menu rounded-box w-52 bg-base-100 p-2 shadow">
+					<span role="button" tabIndex={0} className="btn-sm btn bg-base-100">
+						<Icon path={mdiDotsHorizontal} className="w-6" />
+					</span>
+					<ul className="dropdown-content menu rounded-box w-52 bg-base-100 p-2 shadow">
 						<li>
-							<a download={`characters.json`} href={`/api/exports/characters/all`} target="_blank" rel="noreferrer noopener">
+							<a download={`characters.json`} href={`/api/export/characters/all`} target="_blank" rel="noreferrer noopener">
 								Export
 							</a>
 						</li>
@@ -65,17 +49,12 @@ export default async function Page() {
 				</div>
 			</div>
 
-			<CharactersTable characters={characters} cookie={{ name: charactersCookieSchema.name, value: characterCookie }} revalidate={actionRevalidate} />
+			<CharactersTable characters={characters} cookie={{ name: charactersCookieSchema.name, value: characterCookie }} mobile={mobile} />
 		</div>
 	);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
 	const session = await getServerSession(authOptions);
-	const headersList = headers();
-	const domain = headersList.get("host") || "";
-	const fullUrl = headersList.get("referer") || "";
-	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
-
-	return appMeta(path, `${session?.user?.name}'s Characters`);
+	return appMeta(`${session?.user?.name}'s Characters`);
 }

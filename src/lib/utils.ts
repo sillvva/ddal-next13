@@ -1,7 +1,8 @@
+import { CharacterData } from "$src/server/db/characters";
 import dayjs from "dayjs";
-import qs from "qs";
 import { twMerge } from "tailwind-merge";
-import { ZodSchema } from "zod";
+
+export const stopWords = new Set(["and", "or", "to", "in", "a", "the", "of"]);
 
 const parseObjectPrimitives = (obj: Record<string, any>): any => {
 	return Object.fromEntries(
@@ -14,24 +15,6 @@ const parseObjectPrimitives = (obj: Record<string, any>): any => {
 			return [k, null];
 		})
 	);
-};
-
-export const qsParse = <T>(queryString: string | Record<string, any>, schema: ZodSchema<T>) => {
-	const parsed =
-		typeof queryString === "string"
-			? qs.parse(queryString, {
-					ignoreQueryPrefix: true
-			  })
-			: queryString;
-
-	const zResult = schema.safeParse(parseObjectPrimitives(parsed));
-
-	return {
-		data: zResult.success ? zResult.data : ({} as T),
-		errors: !zResult.success
-			? zResult.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).reduce((acc, v) => (acc.includes(v) ? acc : [...acc, v]), [] as string[])
-			: []
-	};
 };
 
 export const parseError = (e: unknown) => {
@@ -71,3 +54,36 @@ export const tooltipClasses = (text?: string | null, align = "center") => {
 export function canUseDOM() {
 	return !!(typeof window !== "undefined" && window.document && window.document.createElement);
 }
+
+export function setCookie(name: string, value: object): void {
+	if (!canUseDOM()) return;
+	const expires = new Date();
+	expires.setFullYear(expires.getFullYear() + 1);
+	document.cookie = `${name}=${JSON.stringify(value)}; expires=${expires.toUTCString()}; path=/;`;
+}
+
+export function serializeCharacter(data: CharacterData) {
+	return {
+		...data,
+		created_at: new Date(data.created_at),
+		user: {
+			...data.user,
+			emailVerified: data.user.emailVerified ? new Date(data.user.emailVerified) : null
+		},
+		logs: data.logs.map(log => ({
+			...log,
+			date: new Date(log.date),
+			applied_date: log.applied_date ? new Date(log.applied_date) : null,
+			created_at: new Date(log.created_at)
+		}))
+	};
+}
+
+export const sorter = (a: string | number | Date, b: string | number | Date) => {
+	if (typeof a === "string" && typeof b === "string") return a.localeCompare(b);
+	if (typeof a === "number" && typeof b === "number") return a - b;
+	if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime();
+	if (typeof a === "string" && b instanceof Date) return a.localeCompare(b.toISOString());
+	if (typeof b === "string" && a instanceof Date) return a.toISOString().localeCompare(b);
+	return 0;
+};

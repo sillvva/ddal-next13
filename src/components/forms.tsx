@@ -1,33 +1,34 @@
 "use client";
 
-import { formatDate } from "$src/lib/misc";
-import { SaveDMResult } from "$src/server/actions/dm";
-import { getCharacter } from "$src/server/db/characters";
-import { UserDMWithLogs } from "$src/server/db/dms";
-import { dungeonMasterSchema, logSchema, newCharacterSchema } from "$src/types/zod-schema";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { getMagicItems, getStoryAwards } from "$src/lib/entities";
+import { formatDate, sorter } from "$src/lib/utils";
+import { dungeonMasterSchema, logSchema, newCharacterSchema, valibotResolver } from "$src/types/schemas";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { twMerge } from "tailwind-merge";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { flatten, safeParse } from "valibot";
 import { mdiAlertCircle, mdiTrashCan } from "@mdi/js";
 import Icon from "@mdi/react";
-import AutoFillSelect from "./autofill";
 import AutoResizeTextArea from "./textarea";
 
-import type { DungeonMaster, LogType, MagicItem } from "@prisma/client";
+import type { DungeonMasterSchema, LogSchema, NewCharacterSchema } from "$src/types/schemas";
+import type { DungeonMaster, LogType } from "@prisma/client";
 import type { SaveCharacterResult } from "$src/server/actions/character";
 import type { SaveLogResult } from "$src/server/actions/log";
-import type { CharacterData } from "$src/server/db/characters";
+import type { SaveDMResult } from "$src/server/actions/dm";
+import type { CharacterData, CharactersData } from "$src/server/db/characters";
 import type { LogData } from "$src/server/db/log";
+import type { UserDMWithLogs } from "$src/server/db/dms";
+import type { DetailedHTMLProps, InputHTMLAttributes } from "react";
+
 export function EditCharacterForm({
 	id,
 	character,
 	editCharacter
 }: {
 	id: string;
-	character: z.infer<typeof newCharacterSchema>;
-	editCharacter: (data: z.infer<typeof newCharacterSchema>) => SaveCharacterResult;
+	character: NewCharacterSchema;
+	editCharacter: (data: NewCharacterSchema) => SaveCharacterResult;
 }) {
 	const [isPending, startTransition] = useTransition();
 	const [saving, setSaving] = useState(false);
@@ -35,8 +36,8 @@ export function EditCharacterForm({
 		register,
 		formState: { errors },
 		handleSubmit
-	} = useForm<z.infer<typeof newCharacterSchema>>({
-		resolver: zodResolver(newCharacterSchema)
+	} = useForm<NewCharacterSchema>({
+		resolver: valibotResolver(newCharacterSchema)
 	});
 
 	const submitHandler = handleSubmit(data => {
@@ -175,12 +176,12 @@ export function EditCharacterLogForm({
 	log?: CharacterData["logs"][0];
 	dms: DungeonMaster[];
 	character: CharacterData;
-	saveLog: (data: z.infer<typeof logSchema>) => SaveLogResult;
+	saveLog: (data: LogSchema) => SaveLogResult;
 }) {
 	const [isPending, startTransition] = useTransition();
 	const [saving, setSaving] = useState(false);
-	const form = useForm<z.infer<typeof logSchema>>({
-		resolver: zodResolver(logSchema)
+	const form = useForm<LogSchema>({
+		resolver: valibotResolver(logSchema)
 	});
 
 	const selectedLog = useMemo(
@@ -217,6 +218,9 @@ export function EditCharacterLogForm({
 		[log, character.id]
 	);
 
+	const defaultDM = { id: "", name: "", DCI: null, uid: "" };
+	let [dm, setDM] = useState(selectedLog.dm || defaultDM);
+
 	const [date, setDate] = useState(selectedLog.date);
 	const [season, setSeason] = useState<1 | 8 | 9>(selectedLog.experience ? 1 : selectedLog.acp ? 8 : 9);
 	const [type, setType] = useState<LogType>(selectedLog.type || "game");
@@ -246,10 +250,11 @@ export function EditCharacterLogForm({
 	const addLostStoryAward = () => setStoryAwardsLost([...storyAwardsLost, storyAwards[0]?.id || ""]);
 	const removeLostStoryAward = (index: number) => setStoryAwardsLost(storyAwardsLost.filter((_, i) => i !== index));
 
-	const setDM = (dm?: DungeonMaster) => {
+	const setDMFields = (dm?: DungeonMaster) => {
 		form.setValue("dm.id", dm?.id || "");
 		form.setValue("dm.name", dm?.name || "");
 		form.setValue("dm.DCI", dm?.DCI || null);
+		setDM({ ...defaultDM, ...dm });
 	};
 
 	const submitHandler = (e: React.FormEvent<HTMLFormElement>) => {
@@ -273,7 +278,7 @@ export function EditCharacterLogForm({
 		form.handleSubmit(onSubmit)(e);
 	};
 
-	const onSubmit: SubmitHandler<z.infer<typeof logSchema>> = e => {
+	const onSubmit: SubmitHandler<LogSchema> = e => {
 		form.clearErrors();
 
 		const values = form.getValues();
@@ -285,7 +290,7 @@ export function EditCharacterLogForm({
 
 		if (!selectedLog.id) values.date = date.toISOString();
 
-		const parsedResult = logSchema.safeParse(values);
+		const parsedResult = safeParse(logSchema, values);
 		if (parsedResult.success) {
 			setSaving(true);
 			startTransition(async () => {
@@ -295,28 +300,22 @@ export function EditCharacterLogForm({
 					setSaving(false);
 				}
 			});
-			// ⬇️ This object destructuring is necessary. Otherwise it breaks.
-			// mutation.mutate({
-			// 	...values,
-			// 	dm: {
-			// 		...values.dm
-			// 	}
-			// });
 		} else {
-			parsedResult.error.issues.forEach(issue => {
+			const flatErrors = flatten(parsedResult.error);
+			for (const field in flatErrors.nested) {
+				const fieldName = field as (typeof issueFields)[number];
+				const message = flatErrors.nested[field]?.join(", ");
 				const issueFields = ["date", "name", "dm.name", "description", "characterId", "experience", "acp", "tcp", "level", "gold"] as const;
-				if (issueFields.find(i => i == issue.path.join("."))) {
-					form.setError(issue.path.join(".") as (typeof issueFields)[number], {
-						message: issue.message
-					});
+				if (issueFields.find(i => i == field)) {
+					form.setError(fieldName, { message });
 				}
-				if (issue.path[0] == "magic_items_gained" && typeof issue.path[1] == "number" && issue.path[2] == "name") {
-					form.setError(`magic_items_gained.${issue.path[1]}.name`, { message: issue.message });
+				if (field.match(/magic_items_gained\.\d+\.name/)) {
+					form.setError(fieldName, { message });
 				}
-				if (issue.path[0] == "story_awards_gained" && typeof issue.path[1] == "number" && issue.path[2] == "name") {
-					form.setError(`story_awards_gained.${issue.path[1]}.name`, { message: issue.message });
+				if (field.match(/story_awards_gained\.\d+\.name/)) {
+					form.setError(fieldName, { message });
 				}
-			});
+			}
 		}
 	};
 
@@ -342,14 +341,14 @@ export function EditCharacterLogForm({
 				<div className="alert alert-error shadow-lg">
 					<div>
 						<Icon path={mdiAlertCircle} size={1} />
-						<span>Error! Task failed successfully. I mean... {mutError}</span>
+						<span>{mutError}</span>
 					</div>
 				</div>
 			)}
 
 			<form onSubmit={submitHandler}>
 				<input type="hidden" {...form.register("characterId", { value: character.id })} />
-				<input type="hidden" {...form.register("logId", { value: id === "new" ? "" : id })} />
+				<input type="hidden" {...form.register("id", { value: id === "new" ? "" : id })} />
 				<input type="hidden" {...form.register("is_dm_log", { value: selectedLog.is_dm_log })} />
 				<div className="grid grid-cols-12 gap-4">
 					{!selectedLog.is_dm_log && (
@@ -418,15 +417,19 @@ export function EditCharacterLogForm({
 											<label className="label">
 												<span className="label-text">DM Name</span>
 											</label>
-											<AutoFillSelect
+											<ComboBox
 												type="text"
+												values={dms?.map(dm => ({ key: dm.name, value: dm.name + (dm.DCI ? ` (${dm.DCI})` : "") })) || []}
 												inputProps={form.register("dm.name", {
-													value: selectedLog.dm?.name || "",
+													value: dm.name,
 													disabled: saving
 												})}
-												values={dms?.map(dm => ({ key: dm.name, value: dm.name + (dm.DCI ? ` (${dm.DCI})` : "") })) || []}
-												onSelect={val => {
-													setDM(dms?.find(dm => dm.name === val));
+												onSelect={ev => {
+													if (ev) {
+														const updated = dms?.find(dm => dm.name === ev);
+														if (updated) setDMFields(updated);
+														else setDMFields({ ...(dm.name ? dm : defaultDM), name: ev.toString().trim() });
+													} else setDMFields(defaultDM);
 												}}
 											/>
 											<label className="label">
@@ -437,15 +440,19 @@ export function EditCharacterLogForm({
 											<label className="label">
 												<span className="label-text">DM DCI</span>
 											</label>
-											<AutoFillSelect
+											<ComboBox
 												type="number"
 												inputProps={form.register("dm.DCI", {
-													value: selectedLog.dm?.DCI || null,
+													value: dm.DCI,
 													disabled: saving
 												})}
 												values={dms?.map(dm => ({ key: dm.DCI, value: dm.name + (dm.DCI ? ` (${dm.DCI})` : "") })) || []}
-												onSelect={val => {
-													setDM(dms?.find(dm => dm.DCI === val));
+												onSelect={ev => {
+													if (ev) {
+														const updated = dms?.find(dm => dm.DCI === ev);
+														if (updated) setDMFields(updated);
+														else setDMFields({ ...(dm.name ? dm : defaultDM), DCI: ev.toString().trim() });
+													} else setDMFields({ ...(dm.name ? dm : defaultDM), DCI: null });
 												}}
 											/>
 											<label className="label">
@@ -540,7 +547,7 @@ export function EditCharacterLogForm({
 								</div>
 							</>
 						)}
-						<div className={twMerge("form-control w-full", type === "game" ? "col-span-12 sm:col-span-2" : "col-span-4")}>
+						<div className={twMerge("form-control w-full", type === "game" ? "col-span-6 sm:col-span-2" : "col-span-4")}>
 							<label className="label">
 								<span className="label-text">Gold</span>
 							</label>
@@ -553,7 +560,7 @@ export function EditCharacterLogForm({
 								<span className="label-text-alt text-error">{form.formState.errors.gold?.message}</span>
 							</label>
 						</div>
-						<div className={twMerge("form-control w-full", type === "game" ? "col-span-12 sm:col-span-2" : "col-span-4")}>
+						<div className={twMerge("form-control w-full", type === "game" ? "col-span-6 sm:col-span-2" : "col-span-4")}>
 							<label className="label">
 								<span className="label-text overflow-hidden text-ellipsis whitespace-nowrap">Downtime Days</span>
 							</label>
@@ -784,14 +791,14 @@ export function EditDMLogForm({
 }: {
 	id: string;
 	log: LogData;
-	characters: CharacterData[];
-	saveLog: (data: z.infer<typeof logSchema>) => SaveLogResult;
+	characters: CharactersData;
+	saveLog: (data: LogSchema) => SaveLogResult;
 }) {
 	const [isPending, startTransition] = useTransition();
 	const [saving, setSaving] = useState(false);
 
-	const form = useForm<z.infer<typeof logSchema>>({
-		resolver: zodResolver(logSchema)
+	const form = useForm<LogSchema>({
+		resolver: valibotResolver(logSchema)
 	});
 
 	const [date, setDate] = useState(log.date);
@@ -808,7 +815,7 @@ export function EditDMLogForm({
 		const activeName = document.activeElement?.getAttribute("name");
 		if (activeName === "characterName" && !form.getValues("characterId")) return;
 
-		if (form.getValues("characterName") && !(characters || []).map(c => c.id).find(c => form.getValues("characterId"))) {
+		if (form.getValues("characterId") && !(characters || []).find(c => c.id === form.getValues("characterId"))) {
 			form.setError("characterId", { type: "manual", message: "Character not found" });
 			return;
 		}
@@ -826,7 +833,7 @@ export function EditDMLogForm({
 		form.handleSubmit(onSubmit)(e);
 	};
 
-	const onSubmit: SubmitHandler<z.infer<typeof logSchema>> = e => {
+	const onSubmit: SubmitHandler<LogSchema> = e => {
 		form.clearErrors();
 
 		const values = form.getValues();
@@ -839,7 +846,7 @@ export function EditDMLogForm({
 
 		if (!log.id) values.date = date.toISOString();
 
-		const parsedResult = logSchema.safeParse(values);
+		const parsedResult = safeParse(logSchema, values);
 		if (parsedResult.success) {
 			setSaving(true);
 			startTransition(async () => {
@@ -850,20 +857,21 @@ export function EditDMLogForm({
 				}
 			});
 		} else {
-			parsedResult.error.issues.forEach(issue => {
+			const flatErrors = flatten(parsedResult.error);
+			for (const field in flatErrors.nested) {
+				const fieldName = field as (typeof issueFields)[number];
+				const message = flatErrors.nested[field]?.join(", ");
 				const issueFields = ["date", "name", "dm.name", "description", "characterId", "experience", "acp", "tcp", "level", "gold"] as const;
-				if (issueFields.find(i => i == issue.path.join("."))) {
-					form.setError(issue.path.join(".") as (typeof issueFields)[number], {
-						message: issue.message
-					});
+				if (issueFields.find(i => i == field)) {
+					form.setError(fieldName, { message });
 				}
-				if (issue.path[0] == "magic_items_gained" && typeof issue.path[1] == "number" && issue.path[2] == "name") {
-					form.setError(`magic_items_gained.${issue.path[1]}.name`, { message: issue.message });
+				if (field.match(/magic_items_gained\.\d+\.name/)) {
+					form.setError(fieldName, { message });
 				}
-				if (issue.path[0] == "story_awards_gained" && typeof issue.path[1] == "number" && issue.path[2] == "name") {
-					form.setError(`story_awards_gained.${issue.path[1]}.name`, { message: issue.message });
+				if (field.match(/story_awards_gained\.\d+\.name/)) {
+					form.setError(fieldName, { message });
 				}
-			});
+			}
 		}
 	};
 
@@ -895,12 +903,12 @@ export function EditDMLogForm({
 				<div className="alert alert-error shadow-lg">
 					<div>
 						<Icon path={mdiAlertCircle} size={1} />
-						<span>Error! Task failed successfully. I mean... {mutError}</span>
+						<span>{mutError}</span>
 					</div>
 				</div>
 			)}
 			<form onSubmit={submitHandler}>
-				<input type="hidden" {...form.register("logId", { value: id === "new" ? "" : id })} />
+				<input type="hidden" {...form.register("id", { value: id === "new" ? "" : id })} />
 				<input type="hidden" {...form.register("dm.id", { value: log.dm?.id || "" })} />
 				<input type="hidden" {...form.register("dm.DCI", { value: null })} />
 				<input type="hidden" {...form.register("dm.name", { value: log.dm?.name || "" })} />
@@ -952,7 +960,7 @@ export function EditDMLogForm({
 								{!!form.watch().applied_date && <span className="text-error">*</span>}
 							</span>
 						</label>
-						<AutoFillSelect
+						<ComboBox
 							type="text"
 							inputProps={form.register("characterName", {
 								value: characters.find(c => c.id === log.characterId)?.name || "",
@@ -1246,12 +1254,12 @@ export function EditDMLogForm({
 	);
 }
 
-export function EditDMForm({ dm, saveDM }: { dm: Exclude<UserDMWithLogs, null>; saveDM: (dm: z.infer<typeof dungeonMasterSchema>) => SaveDMResult }) {
+export function EditDMForm({ dm, saveDM }: { dm: Exclude<UserDMWithLogs, null>; saveDM: (dm: DungeonMasterSchema) => SaveDMResult }) {
 	const [isPending, startTransition] = useTransition();
 	const [saving, setSaving] = useState(false);
 
-	const form = useForm<z.infer<typeof dungeonMasterSchema>>({
-		resolver: zodResolver(dungeonMasterSchema)
+	const form = useForm<DungeonMasterSchema>({
+		resolver: valibotResolver(dungeonMasterSchema)
 	});
 
 	const submitHandler = form.handleSubmit(data => {
@@ -1314,60 +1322,127 @@ export function EditDMForm({ dm, saveDM }: { dm: Exclude<UserDMWithLogs, null>; 
 	);
 }
 
-export const getMagicItems = (
-	character: Exclude<Awaited<ReturnType<typeof getCharacter>>, null>,
-	options?: {
-		lastLogId?: string;
-		excludeDropped?: boolean;
-	}
-) => {
-	const { lastLogId = "", excludeDropped = false } = options || {};
-	const magicItems: MagicItem[] = [];
-	let lastLog = false;
-	character.logs.forEach(log => {
-		if (lastLog) return;
-		if (log.id === lastLogId) {
-			lastLog = true;
-			return;
-		}
-		log.magic_items_gained.forEach(item => {
-			magicItems.push(item);
-		});
-		log.magic_items_lost.forEach(item => {
-			magicItems.splice(
-				magicItems.findIndex(i => i.id === item.id),
-				1
-			);
-		});
-	});
-	return magicItems.filter(item => !excludeDropped || !item.logLostId);
-};
+export default function ComboBox({
+	type,
+	values,
+	inputProps,
+	onSelect,
+	searchBy = "key"
+}: {
+	type: "text" | "number";
+	values: { key?: string | number | null; value: string }[];
+	inputProps: DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
+	onSelect: (value: string | number) => void;
+	searchBy?: "key" | "value";
+}) {
+	const [keySel, setKeySel] = useState<number>(0);
+	const [search, setSearch] = useState(inputProps.value?.toString() || "");
+	const [selected, setSelected] = useState(false);
 
-export const getStoryAwards = (
-	character: Exclude<Awaited<ReturnType<typeof getCharacter>>, null>,
-	options?: {
-		lastLogId?: string;
-		excludeDropped?: boolean;
-	}
-) => {
-	const { lastLogId = "", excludeDropped = false } = options || {};
-	const storyAwards: MagicItem[] = [];
-	let lastLog = false;
-	character.logs.forEach(log => {
-		if (lastLog) return;
-		if (log.id === lastLogId) {
-			lastLog = true;
-			return;
-		}
-		log.story_awards_gained.forEach(item => {
-			storyAwards.push(item);
-		});
-		log.story_awards_lost.forEach(item => {
-			storyAwards.splice(
-				storyAwards.findIndex(i => i.id === item.id),
-				1
-			);
-		});
-	});
-	return storyAwards.filter(item => !excludeDropped || !item.logLostId);
-};
+	const parsedValues = useMemo(() => values.map(v => ({ key: v.key ?? "", value: v.value })).filter(v => v.key !== null), [values]);
+
+	const matches = useMemo(
+		() =>
+			parsedValues && parsedValues.length > 0 && search.trim()
+				? parsedValues
+						.filter(v => `${searchBy == "key" ? v.key : v.value}`.toLowerCase().includes(search.toLowerCase()))
+						.sort((a, b) => sorter(a.value, b.value))
+				: [],
+		[parsedValues, search, searchBy]
+	);
+
+	useEffect(() => {
+		setSelected(matches.length === 1);
+	}, []);
+
+	const selectHandler = useCallback(
+		(key: number) => {
+			const match = matches[key];
+			onSelect(match?.key || "");
+			setKeySel(match ? key : 0);
+			setSelected(!!match);
+			setSearch("");
+		},
+		[matches, onSelect]
+	);
+
+	const selectNew = useCallback(
+		(value: string) => {
+			onSelect(value);
+			setSelected(true);
+			setSearch("");
+		},
+		[onSelect]
+	);
+
+	return (
+		<div className="dropdown">
+			<label>
+				<input
+					type={type}
+					{...inputProps}
+					onChange={e => {
+						setSelected(false);
+						setKeySel(0);
+						setSearch(e.currentTarget.value);
+						if (inputProps.onChange) inputProps.onChange(e);
+					}}
+					onKeyDown={e => {
+						if (!parsedValues.length || !search.trim()) return;
+						if (e.code === "ArrowDown") {
+							e.preventDefault();
+							if (selected) return false;
+							setKeySel(keySel + 1);
+							if (keySel >= matches.length) setKeySel(0);
+							return false;
+						}
+						if (e.code === "ArrowUp") {
+							e.preventDefault();
+							if (selected) return false;
+							setKeySel(keySel - 1);
+							if (keySel < 0) setKeySel(matches.length - 1);
+							return false;
+						}
+						if (e.code === "Enter" || e.code === "Tab") {
+							e.preventDefault();
+							if (selected) return false;
+							if (matches.length) selectHandler(keySel);
+							else selectNew(search);
+						}
+						if (e.code === "Escape") {
+							e.preventDefault();
+							if (selected) return false;
+							selectHandler(-1);
+							return false;
+						}
+					}}
+					onFocus={e => {
+						if (inputProps.onFocus) inputProps.onFocus(e);
+					}}
+					onBlur={e => {
+						if (!selected) {
+							if (search.trim()) {
+								const match = matches.findIndex(v => v[searchBy].toString().toLowerCase() === e.currentTarget.value.toLowerCase());
+								if (match >= 0) selectHandler(match);
+								else selectNew(search.trim());
+							} else selectNew(search.trim());
+						}
+						if (inputProps.onBlur) inputProps.onBlur(e);
+					}}
+					className="input-bordered input w-full focus:border-primary"
+				/>
+			</label>
+			{parsedValues && parsedValues.length > 0 && search.trim() && !selected && (
+				<ul id={`options-${inputProps.name}`} className="dropdown-content menu w-full rounded-lg bg-base-100 p-2 shadow dark:bg-base-200">
+					{matches.slice(0, 8).map((kv, i) => (
+						<li key={i} className={twMerge("hover:bg-primary/50", keySel === i && "bg-primary text-primary-content")}>
+							<span className="rounded-none px-4 py-2" role="option" tabIndex={0} aria-selected={keySel === i} onMouseDown={() => selectHandler(i)}>
+								{kv.value}
+							</span>
+						</li>
+					))}
+				</ul>
+			)}
+		</div>
+	);
+}

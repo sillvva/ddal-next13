@@ -1,5 +1,5 @@
 import { authOptions } from "$src/lib/auth";
-import { parseError } from "$src/lib/misc";
+import { parseError } from "$src/lib/utils";
 import { prisma } from "$src/server/db/client";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
