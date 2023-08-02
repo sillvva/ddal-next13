@@ -115,18 +115,18 @@ export function CharactersTable({
 		<>
 			<div className="flex flex-wrap gap-2">
 				<div className="flex w-full gap-2 sm:max-w-md">
-					<a href="/characters/new/edit" className="btn-primary btn-sm btn hidden sm:inline-flex" aria-label="New Character">
+					<Link href="/characters/new/edit" className="btn-primary btn-sm btn hidden sm:inline-flex" aria-label="New Character">
 						New Character
-					</a>
+					</Link>
 					<input
 						type="text"
 						placeholder="Search by name, race, class, items, etc."
 						onChange={e => setSearch(e.target.value)}
 						className="input-bordered input min-w-0 flex-1 sm:input-sm"
 					/>
-					<a href="/characters/new/edit" className="btn-primary btn inline-flex sm:hidden" aria-label="New Character">
+					<Link href="/characters/new/edit" className="btn-primary btn inline-flex sm:hidden" aria-label="New Character">
 						<Icon path={mdiPlus} className="inline w-6" />
-					</a>
+					</Link>
 					<button
 						className={twMerge("btn inline-flex xs:hidden", magicItems && "btn-primary")}
 						onClick={toggleMagicItems}
@@ -250,7 +250,7 @@ export function CharactersTable({
 											result => result.id == character.id && result.terms.find(term => result.match[term].includes("magicItems"))
 										);
 										return (
-											<a href={`/characters/${character.id}`} className="img-grow card-compact card bg-base-100 shadow-xl" key={character.id}>
+											<Link href={`/characters/${character.id}`} className="img-grow card card-compact bg-base-100 shadow-xl" key={character.id}>
 												<figure className="relative aspect-square overflow-hidden">
 													{character.image_url ? (
 														<LazyImage
@@ -283,7 +283,7 @@ export function CharactersTable({
 														</p>
 													</div>
 												</div>
-											</a>
+											</Link>
 										);
 									})}
 							</div>
@@ -386,9 +386,9 @@ export function CharacterLogTable({
 			<div className="mt-4 flex flex-wrap gap-2">
 				<div className="flex w-full gap-2 print:hidden sm:max-w-md">
 					{myCharacter && (
-						<a href={`/characters/${character.id}/log/new`} className="btn-primary btn hidden sm:btn-sm sm:inline-flex sm:px-3" aria-label="New Log">
+						<Link href={`/characters/${character.id}/log/new`} className="btn-primary btn hidden sm:btn-sm sm:inline-flex sm:px-3" aria-label="New Log">
 							New Log
-						</a>
+						</Link>
 					)}
 					{logs.length > 0 && (
 						<input
@@ -539,9 +539,9 @@ const CharacterLogRow = ({
 						<p className="text-sm font-normal">
 							<span className="font-semibold">DM:</span>{" "}
 							{myCharacter ? (
-								<a href="/dms/{log.dm.id}" className="text-secondary">
+								<Link href="/dms/{log.dm.id}" className="text-secondary">
 									{log.dm.name}
-								</a>
+								</Link>
 							) : (
 								log.dm.name
 							)}

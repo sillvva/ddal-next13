@@ -111,7 +111,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 										{myCharacter && (
 											<>
 												<li>
-													<a href={`/characters/${character.id}/edit`}>Edit</a>
+													<Link href={`/characters/${character.id}/edit`}>Edit</Link>
 												</li>
 												<li>
 													<DeleteCharacter deleteCharacter={actionDeleteCharacter} />
