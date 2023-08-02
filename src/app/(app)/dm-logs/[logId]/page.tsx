@@ -63,9 +63,7 @@ export default async function Page({ params: { logId } }: { params: { logId: str
 		const result = await saveLog(data, session?.user);
 		if (result?.id) {
 			revalidateTag(`dm-logs-${session?.user?.id}`);
-			revalidateTag(`dm-log-${result.id}`);
 			if (characterId) {
-				revalidateTag(`characters-${session?.user?.id}`);
 				revalidateTag(`character-${characterId}`);
 			}
 			redirect(`/dm-logs`);

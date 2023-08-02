@@ -1,5 +1,5 @@
+import { dataCache } from "$src/lib/store";
 import { prisma } from "$src/server/db/client";
-import { unstable_cache } from "next/cache";
 
 export type LogData = Exclude<Awaited<ReturnType<typeof getLog>>, null>;
 export async function getLog(logId: string, dmLog = false) {
@@ -10,15 +10,9 @@ export async function getLog(logId: string, dmLog = false) {
 }
 
 export function getLogCache(logId: string, dmLog = false) {
-	return unstable_cache(
-		async () => {
-			return await getLog(logId, dmLog);
-		},
-		[`log-${logId}`],
-		{
-			tags: [`log-${logId}`]
-		}
-	)();
+	return dataCache(async () => {
+		return await getLog(logId, dmLog);
+	}, [`log-${logId}`]);
 }
 
 export type DMLogData = Awaited<ReturnType<typeof getDMLogs>>;
@@ -53,13 +47,7 @@ export async function getDMLogs(userId = "", userName = "") {
 }
 
 export function getDMLogsCache(userId = "", userName = "") {
-	return unstable_cache(
-		async () => {
-			return await getDMLogs(userId, userName);
-		},
-		[`dm-logs-${userId}`],
-		{
-			tags: [`dm-logs-${userId}`]
-		}
-	)();
+	return dataCache(async () => {
+		return await getDMLogs(userId, userName);
+	}, [`dm-logs-${userId}`]);
 }

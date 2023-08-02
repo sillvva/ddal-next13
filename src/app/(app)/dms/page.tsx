@@ -23,6 +23,7 @@ export default async function Page() {
 		const result = await deleteDM(dm.id, session.user?.id);
 		if (result.id) {
 			revalidateTag(`dms-${session?.user?.id}`);
+			revalidateTag(`dms-wlogs-${session?.user?.id}`);
 		}
 		return result;
 	};

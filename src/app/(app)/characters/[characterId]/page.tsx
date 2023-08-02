@@ -51,6 +51,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 		const result = await deleteCharacter(characterId, session?.user?.id);
 		if (result.id) {
 			revalidateTag(`characters-${session?.user?.id}`);
+			revalidateTag(`character-${characterId}`);
 		}
 		return result;
 	};

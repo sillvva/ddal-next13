@@ -42,7 +42,11 @@ export default async function Page({ params: { characterId } }: { params: { char
 		"use server";
 		const result = await saveCharacter(characterId, session?.user?.id || "", data);
 		if (result.id) {
-			revalidateTag(`character-${result.id}`);
+			if (characterId === "new") {
+				revalidateTag(`characters-${session?.user?.id}`);
+			} else {
+				revalidateTag(`character-${result.id}`);
+			}
 			redirect(`/characters/${result.id}`);
 		}
 		return result;

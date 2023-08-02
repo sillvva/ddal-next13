@@ -1,6 +1,6 @@
 import { getLogsSummary } from "$src/lib/entities";
+import { dataCache } from "$src/lib/store";
 import { prisma } from "$src/server/db/client";
-import { unstable_cache } from "next/cache";
 
 export type CharacterData = Exclude<Awaited<ReturnType<typeof getCharacter>>, null>;
 export async function getCharacter(characterId: string, includeLogs = true) {
@@ -36,15 +36,9 @@ export async function getCharacter(characterId: string, includeLogs = true) {
 }
 
 export function getCharacterCache(characterId: string) {
-	return unstable_cache(
-		async () => {
-			return await getCharacter(characterId);
-		},
-		[`character-${characterId}`],
-		{
-			tags: [`character-${characterId}`]
-		}
-	)();
+	return dataCache(async () => {
+		return await getCharacter(characterId);
+	}, [`character-${characterId}`]);
 }
 
 export type CharactersData = Awaited<ReturnType<typeof getCharacters>>;
@@ -58,18 +52,7 @@ export async function getCharacters(userId: string) {
 }
 
 export function getCharactersCache(userId: string) {
-	return unstable_cache(
-		async () => {
-			return await prisma.character.findMany({
-				include: {
-					user: true
-				},
-				where: { userId: userId }
-			});
-		},
-		[`characters-${userId}`],
-		{
-			tags: [`characters-${userId}`]
-		}
-	)();
+	return dataCache(async () => {
+		return await getCharacters(userId);
+	}, [`characters-${userId}`]);
 }

@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { cookies } from "next/headers";
 
 export type CookieSchema<TDefaults> = { name: string; defaults: TDefaults };
@@ -16,3 +17,8 @@ export const getCookie = <TDefaults extends Record<string, string | number | boo
 
 	return cookieData;
 };
+
+export const dataCache = <TReturnType>(callback: (...args: any[]) => Promise<TReturnType>, tags: string[]) =>
+	unstable_cache(callback, tags, {
+		tags
+	})();
