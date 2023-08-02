@@ -1335,25 +1335,22 @@ export default function ComboBox({
 	onSelect: (value: string | number) => void;
 	searchBy?: "key" | "value";
 }) {
-	const [keySel, setKeySel] = useState<number>(0);
 	const [search, setSearch] = useState(inputProps.value?.toString() || "");
-	const [selected, setSelected] = useState(false);
-
-	const parsedValues = useMemo(() => values.map(v => ({ key: v.key ?? "", value: v.value })).filter(v => v.key !== null), [values]);
 
 	const matches = useMemo(
 		() =>
-			parsedValues && parsedValues.length > 0 && search.trim()
-				? parsedValues
+			search.trim()
+				? values
+						.map(v => ({ key: v.key ?? "", value: v.value }))
+						.filter(v => v.key !== null)
 						.filter(v => `${searchBy == "key" ? v.key : v.value}`.toLowerCase().includes(search.toLowerCase()))
 						.sort((a, b) => sorter(a.value, b.value))
 				: [],
-		[parsedValues, search, searchBy]
+		[search, searchBy, values]
 	);
 
-	useEffect(() => {
-		setSelected(matches.length === 1);
-	}, []);
+	const [keySel, setKeySel] = useState<number>(0);
+	const [selected, setSelected] = useState(matches.length === 1);
 
 	const selectHandler = useCallback(
 		(key: number) => {
@@ -1388,7 +1385,7 @@ export default function ComboBox({
 						if (inputProps.onChange) inputProps.onChange(e);
 					}}
 					onKeyDown={e => {
-						if (!parsedValues.length || !search.trim()) return;
+						if (!values.length || !search.trim()) return;
 						if (e.code === "ArrowDown") {
 							e.preventDefault();
 							if (selected) return false;
@@ -1432,7 +1429,7 @@ export default function ComboBox({
 					className="input-bordered input w-full focus:border-primary"
 				/>
 			</label>
-			{parsedValues && parsedValues.length > 0 && search.trim() && !selected && (
+			{matches.length > 0 && search.trim() && !selected && (
 				<ul id={`options-${inputProps.name}`} className="dropdown-content menu w-full rounded-lg bg-base-100 p-2 shadow dark:bg-base-200">
 					{matches.slice(0, 8).map((kv, i) => (
 						<li key={i} className={twMerge("hover:bg-primary/50", keySel === i && "bg-primary text-primary-content")}>
