@@ -7,7 +7,6 @@ import { deleteDM, saveDM } from "$src/server/actions/dm";
 import { getUserDMWithLogs, getUserDMWithLogsCache } from "$src/server/db/dms";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
-import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { mdiPencil } from "@mdi/js";
@@ -107,12 +106,6 @@ export default async function Page({ params: { dmId } }: { params: { dmId: strin
 
 export async function generateMetadata({ params: { dmId } }: { params: { dmId: string } }): Promise<Metadata> {
 	const session = await getServerSession(authOptions);
-	const headersList = headers();
-	const domain = headersList.get("host") || "";
-	const fullUrl = headersList.get("referer") || "";
-	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
-
 	if (!dm) dm = await getUserDMWithLogsCache(session?.user?.id || "", dmId);
-
-	return appMeta(path, `Edit ${dm?.name}`);
+	return appMeta(`Edit ${dm?.name}`);
 }

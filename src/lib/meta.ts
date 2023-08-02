@@ -3,11 +3,11 @@ import { CharacterData } from "$src/server/db/characters";
 import { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
 import { headers } from "next/headers";
 
-export const appMeta = (path: string, title: string) => {
+export const appMeta = (title: string) => {
 	const openGraph = {
 		title: title,
 		description: "A log sheet made for Adventurers League characters",
-		url: path,
+		url: env.NEXTAUTH_URL,
 		siteName: "Adventurers League Log",
 		images: [
 			{
@@ -24,7 +24,7 @@ export const appMeta = (path: string, title: string) => {
 		creator: "@sillvvasensei",
 		creatorId: "1006748654391169029",
 		images: ["/images/barovia-gate.jpg"],
-		url: path
+		url: env.NEXTAUTH_URL
 	};
 
 	return {

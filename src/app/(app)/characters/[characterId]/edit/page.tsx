@@ -6,7 +6,6 @@ import { saveCharacter } from "$src/server/actions/character";
 import { getCharacterCache } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import type { NewCharacterSchema } from "$src/types/schemas";
@@ -87,14 +86,9 @@ export default async function Page({ params: { characterId } }: { params: { char
 }
 
 export async function generateMetadata({ params: { characterId } }: { params: { characterId: string } }): Promise<Metadata> {
-	const headersList = headers();
-	const domain = headersList.get("host") || "";
-	const fullUrl = headersList.get("referer") || "";
-	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
-
-	if (characterId === "new") return appMeta(path, "New Character");
+	if (characterId === "new") return appMeta("New Character");
 
 	const character = await getCharacterCache(characterId);
-	if (character) return appMeta(path, `Edit ${character.name}`);
-	else return appMeta(path, "Character Not Found");
+	if (character) return appMeta(`Edit ${character.name}`);
+	else return appMeta("Character Not Found");
 }

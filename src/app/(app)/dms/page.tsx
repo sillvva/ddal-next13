@@ -6,7 +6,6 @@ import { deleteDM } from "$src/server/actions/dm";
 import { getUserDMsWithLogsCache, UserDMsWithLogs } from "$src/server/db/dms";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import type { Metadata } from "next";
@@ -38,10 +37,5 @@ export default async function Page() {
 
 export async function generateMetadata(): Promise<Metadata> {
 	const session = await getServerSession(authOptions);
-	const headersList = headers();
-	const domain = headersList.get("host") || "";
-	const fullUrl = headersList.get("referer") || "";
-	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
-
-	return appMeta(path, `${session?.user?.name}'s DMs`);
+	return appMeta(`${session?.user?.name}'s DMs`);
 }

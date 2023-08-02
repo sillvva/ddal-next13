@@ -5,7 +5,6 @@ import { appMeta, isMobile } from "$src/lib/meta";
 import { getCookie } from "$src/lib/store";
 import { getCharacterCache, getCharactersCache } from "$src/server/db/characters";
 import { getServerSession } from "next-auth";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { mdiDotsHorizontal } from "@mdi/js";
 import Icon from "@mdi/react";
@@ -57,10 +56,5 @@ export default async function Page() {
 
 export async function generateMetadata(): Promise<Metadata> {
 	const session = await getServerSession(authOptions);
-	const headersList = headers();
-	const domain = headersList.get("host") || "";
-	const fullUrl = headersList.get("referer") || "";
-	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
-
-	return appMeta(path, `${session?.user?.name}'s Characters`);
+	return appMeta(`${session?.user?.name}'s Characters`);
 }

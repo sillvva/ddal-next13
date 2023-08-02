@@ -7,7 +7,6 @@ import { getCharacterCache } from "$src/server/db/characters";
 import { getUserDMsCache } from "$src/server/db/dms";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import type { LogSchema } from "$src/types/schemas";
@@ -46,10 +45,5 @@ export default async function Page({ params: { characterId, logId } }: { params:
 }
 
 export async function generateMetadata({ params: { logId } }: { params: { logId: string } }): Promise<Metadata> {
-	const headersList = headers();
-	const domain = headersList.get("host") || "";
-	const fullUrl = headersList.get("referer") || "";
-	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
-
-	return appMeta(path, `${logId === "new" ? "New" : "Edit"} Log - Adventurers League Log Sheet`);
+	return appMeta(`${logId === "new" ? "New" : "Edit"} Log - Adventurers League Log Sheet`);
 }

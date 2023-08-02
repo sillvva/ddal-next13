@@ -196,6 +196,6 @@ export async function generateMetadata({ params: { characterId } }: { params: { 
 	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
 
 	const character = await getCharacterCache(characterId);
-	if (character) return characterMeta(character, path);
-	else return appMeta(path, "Character Not Found");
+	if (character) return characterMeta(character);
+	else return appMeta("Character Not Found");
 }

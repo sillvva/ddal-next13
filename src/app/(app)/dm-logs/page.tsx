@@ -6,7 +6,6 @@ import { deleteLog } from "$src/server/actions/log";
 import { DMLogData, getDMLogsCache } from "$src/server/db/log";
 import { getServerSession } from "next-auth";
 import { revalidateTag } from "next/cache";
-import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { mdiDotsHorizontal } from "@mdi/js";
@@ -67,10 +66,5 @@ export default async function Page() {
 
 export async function generateMetadata(): Promise<Metadata> {
 	const session = await getServerSession(authOptions);
-	const headersList = headers();
-	const domain = headersList.get("host") || "";
-	const fullUrl = headersList.get("referer") || "";
-	const path = fullUrl.replace(domain, "").replace(/^https?:\/\//, "");
-
-	return appMeta(path, `${session?.user?.name}'s DM Logs`);
+	return appMeta(`${session?.user?.name}'s DM Logs`);
 }
