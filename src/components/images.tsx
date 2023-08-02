@@ -34,14 +34,16 @@ export function LazyImage({
 	}, [ioParams]);
 
 	return (
-		<img
-			data-src={src}
-			src="/images/icon-180.png"
-			width={typeof width === "string" ? Number(width) : width || 180}
-			height={typeof height === "string" ? Number(height) : height || 180}
-			className={className}
-			alt={alt || ""}
-			ref={ref}
-		/>
+		<picture>
+			<img
+				data-src={src}
+				src="/images/icon-180.png"
+				width={typeof width === "string" ? Number(width) : width || 180}
+				height={typeof height === "string" ? Number(height) : height || 180}
+				className={className}
+				alt={alt || ""}
+				ref={ref}
+			/>
+		</picture>
 	);
 }

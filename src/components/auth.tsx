@@ -39,5 +39,14 @@ export const HeaderLogin = ({ domain }: { domain: string }) => {
 };
 
 export const MenuLogout = () => {
-	return <a onClick={() => signOut()}>Logout</a>;
+	return (
+		<button
+			onClick={() =>
+				signOut({
+					callbackUrl: "/"
+				})
+			}>
+			Logout
+		</button>
+	);
 };

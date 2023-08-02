@@ -51,6 +51,7 @@ export default async function Page({ params: { characterId } }: { params: { char
 		const result = await deleteCharacter(characterId, session?.user?.id);
 		if (result.id) {
 			revalidateTag(`characters-${session?.user?.id}`);
+			revalidateTag(`character-${characterId}`);
 		}
 		return result;
 	};
@@ -88,7 +89,9 @@ export default async function Page({ params: { characterId } }: { params: { char
 						{character.image_url && (
 							<div className="relative mr-4 hidden flex-col items-end justify-center print:hidden xs:flex md:hidden">
 								<a href={character.image_url} target="_blank" rel="noreferrer noopener" className="mask mask-squircle mx-auto h-20 w-full bg-primary">
-									<img src={character.image_url} className="h-full w-full object-cover object-top transition-all" alt={character.name} />
+									<picture>
+										<img src={character.image_url} className="h-full w-full object-cover object-top transition-all" alt={character.name} />
+									</picture>
 								</a>
 							</div>
 						)}
@@ -145,7 +148,9 @@ export default async function Page({ params: { characterId } }: { params: { char
 							{character.image_url && (
 								<div className="relative hidden flex-col items-end justify-center print:hidden md:flex">
 									<a href={character.image_url} target="_blank" rel="noreferrer noopener" className="mask mask-squircle mx-auto h-52 w-full bg-primary">
-										<img src={character.image_url} className="h-full w-full object-cover object-top transition-all" alt={character.name} />
+										<picture>
+											<img src={character.image_url} className="h-full w-full object-cover object-top transition-all" alt={character.name} />
+										</picture>
 									</a>
 								</div>
 							)}

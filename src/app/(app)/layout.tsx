@@ -1,4 +1,5 @@
 import "$src/app/globals.css";
+import background from "$public/images/barovia-gate.jpg";
 import { HeaderLogin, MenuLogout } from "$src/components/auth";
 import { Drawer } from "$src/components/drawer";
 import { authOptions } from "$src/lib/auth";
@@ -11,7 +12,6 @@ import Link from "next/link";
 import { twMerge } from "tailwind-merge";
 import { mdiGithub } from "@mdi/js";
 import Icon from "@mdi/react";
-import background from "../../../public/images/barovia-gate.jpg";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -55,7 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 								</>
 							)}
 							<div className="flex-1">&nbsp;</div>
-							<a href="https://github.com/sillvva/ddal-svelte" target="_blank" rel="noreferrer noopener" className="hidden items-center p-2 lg:flex">
+							<a href="https://github.com/sillvva/ddal-next13" target="_blank" rel="noreferrer noopener" className="hidden items-center p-2 lg:flex">
 								<Icon path={mdiGithub} className="w-6" />
 							</a>
 							<a href="http://paypal.me/Sillvva" target="_blank" rel="noreferrer noopener" className="hidden items-center p-2 lg:flex">
